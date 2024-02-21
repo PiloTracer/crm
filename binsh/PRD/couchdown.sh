@@ -1,2 +1,2 @@
 #!/bin/bash
-docker-compose -f docker-compose-couchdb.yaml down
+sudo docker-compose -f docker-compose-couchdb.yaml down
