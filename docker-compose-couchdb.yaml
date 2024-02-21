@@ -12,7 +12,7 @@ services:
       - "6984:5984"
     environment:
       - COUCHDB_USER=dashboard
-      - "COUCHDB_PASSWORD=Jimena1000$"
+      - COUCHDB_PASSWORD=Jimena1000
       - COUCHDB_URL=http://localhost:6984
       - COUCHDB_DB=sinpe
       - TZ=America/Los_Angeles
