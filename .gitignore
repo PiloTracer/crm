@@ -5,8 +5,8 @@
 
 # Readme files:
 readme*.*
-bin/PRD/
-bin/dev/
+bin/PRD/*
+bin/dev/*
 
 # User-specific files
 *.rsuser
