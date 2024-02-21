@@ -1,0 +1,8 @@
+{
+    "workbench.preferredLightColorTheme": "Default High Contrast",
+    "workbench.preferredHighContrastLightColorTheme": "Default Dark+",
+    "workbench.preferredHighContrastColorTheme": "Monokai Dimmed",
+    "workbench.colorTheme": "Solarized Dark",
+    "python.analysis.typeCheckingMode": "off",
+    "python.analysis.autoImportCompletions": true
+}

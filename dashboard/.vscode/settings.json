@@ -1,0 +1,14 @@
+{
+  "editor.defaultFormatter": "vscode.typescript-language-features",
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "files.autoSave": "afterDelay",
+  "editor.definitionLinkOpensInPeek": true,
+  "workbench.colorTheme": "Kimbie Dark",
+  "editor.fontSize": 12,
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  }
+}

@@ -1,0 +1,35 @@
+version: '3.8'
+services:
+  messaging:
+    image: pytap_i
+    container_name: pytap_c
+    build:
+      context: ./pytap/src
+      dockerfile: ../../Dockerfile.pytap.dev
+      args: 
+        env: dev
+    restart: always
+    hostname: srv.pytap
+    ports:
+      - 8001:8000
+      - 8889:8888
+      - 5679:5678
+      - 4000:80
+    environment:
+      - TZ=America/Los_Angeles
+    volumes:
+      - ./pytap/src:/code/pytap
+      - ./uploads/log:/opt/uploads/log/
+    #depends_on:
+    #  - rabbitmq
+    networks:
+      web:
+        ipv4_address: 10.5.0.2
+
+networks:
+  web:
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 10.5.0.0/16
+         gateway: 10.5.0.1

@@ -1,0 +1,24 @@
+FROM python:3.12.2-alpine3.19 as base
+
+FROM base AS python-deps
+
+RUN apk update
+RUN apk add --no-cache tzdata
+RUN pip install --upgrade pip
+
+WORKDIR /code/pytap
+
+COPY requirements.txt ./
+#RUN pip install --trusted-host pypi.python.org -r requirements.txt
+RUN pip install --no-cache-dir --upgrade  -r requirements.txt
+
+COPY . .
+
+#RUN chmod +x listener.py
+
+EXPOSE 80
+
+#ENV PYTHONUNBUFFERED=1
+
+ENTRYPOINT ["python3", "receiver.py"]
+

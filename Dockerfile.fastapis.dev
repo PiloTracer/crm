@@ -1,0 +1,17 @@
+FROM python:3.12.2-alpine3.19 as base
+
+FROM base AS python-deps
+
+RUN apk update
+RUN apk add --no-cache tzdata
+RUN pip install --upgrade pip
+ENV TZ=America/Los_Angeles
+
+WORKDIR /code/fastapis
+
+COPY requirements.txt ./
+RUN pip install --no-cache-dir --upgrade  -r requirements.txt
+
+COPY . .
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

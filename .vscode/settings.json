@@ -1,0 +1,6 @@
+{
+	"python.analysis.extraPaths": [
+		"./fastapis/src/routers"
+	],
+	"workbench.colorTheme": "Solarized Light"
+}

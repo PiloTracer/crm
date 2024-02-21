@@ -1,0 +1,39 @@
+version: '3.8'
+services:
+  backend:
+    image: fastap_i
+    container_name: fastap_c
+    build:
+      context: ./fastapis/src
+      dockerfile: ../../Dockerfile.fastapis.dev
+      args: 
+        env: dev
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    #  uvicorn.run("main:app", host="0.0.0.0", reload=True, port=8000)
+    #["python", "-m", "debugpy", "--listen", "0.0.0.0:8888", "--wait-for-client", "main.py"]
+    hostname: srv.fastapis
+    ports:
+      - 8000:8000
+      - 8888:8888
+      - 5678:5678
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=admin123
+      - TZ=America/Los_Angeles
+    volumes:
+      - ./fastapis/src:/code/fastapis
+      - ./uploads/files:/opt/uploads/files
+      - ./uploads/log:/opt/uploads/log/
+    #depends_on:
+    #  - couchserver
+    networks:
+      web:
+        ipv4_address: 10.5.0.6
+
+networks:
+  web:
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 10.5.0.0/16
+         gateway: 10.5.0.1

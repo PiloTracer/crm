@@ -1,0 +1,17 @@
+version: '3.8'
+
+include:
+  - docker-compose-pytap-dev.yaml
+  - docker-compose-rabbitmq.yaml
+  - docker-compose-fastapi-dev.yaml
+  - docker-compose-dashboard-dev.yaml
+  - docker-compose-api-dev.yaml
+  - docker-compose-couchdb.yaml
+
+networks:
+  web:
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 10.5.0.0/16
+         gateway: 10.5.0.1

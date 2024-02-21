@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  apifront:
+    image: api_i
+    container_name: api_c
+    build:
+      context: ./api
+      dockerfile: ../Dockerfile.api.dev
+    volumes:
+      - ./api/run:/code/api/run
+      - ./api/req:/code/req
+      - /code/api/run/node_modules
+    ports:
+      - 0.0.0.0:6000:3000
+      - 0.0.0.0:6007:3007
+      - 0.0.0.0:6001:3001
+      - 0.0.0.0:10229:9229
+      - 0.0.0.0:10222:9222
+      - 0.0.0.0:7006:6006 #storybook
+    environment:
+      - NODE_ENV=development
+      - TZ=America/Los_Angeles
+      - NEXT_WEBPACK_USEPOLLING=true
+    networks:
+      web:
+        ipv4_address: 10.5.0.12
+
+networks:
+  web:
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 10.5.0.0/16
+         gateway: 10.5.0.1

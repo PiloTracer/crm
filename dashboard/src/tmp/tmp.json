@@ -1,0 +1,16 @@
+{
+  "id": "12345678",
+  "customeraccount": "X750295",
+  "amount": "999.99",
+  "currency": "usd",
+  "trxtype": "payout",
+  "cxname": "John Doe",
+  "routing": "000023923",
+  "bankaccount": "00023928329912000023",
+  "accounttype": "C",
+  "email": "emailid@somedomain.com",
+  "address": "@!<>Lottesloot 503b, 2 hoog, 0983",
+  "parent": "direct",
+  "merchant": "latcorp",
+  "comment": "withdrawal"
+}

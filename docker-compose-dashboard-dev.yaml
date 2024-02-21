@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  frontend:
+    image: dash_i
+    container_name: dash_c
+    stdin_open: true
+    build:
+      context: ./dashboard
+      dockerfile: ../Dockerfile.dashboard.dev
+    volumes:
+      - ./dashboard:/code/dashboard
+      - /code/dashboard/node_modules
+    ports:
+      - 0.0.0.0:3000:3000
+      - 0.0.0.0:3007:3007
+      - 0.0.0.0:3001:3001
+      - 0.0.0.0:9229:9229
+      - 0.0.0.0:9222:9222
+      - 0.0.0.0:6006:6006 #storybook
+
+    environment:
+      - TZ=America/Los_Angeles
+      - NEXT_WEBPACK_USEPOLLING=true
+
+    #depends_on:
+    #  - backend
+    #  - rabbitmq
+    #  - messaging
+    networks:
+      web:
+        ipv4_address: 10.5.0.10
+
+networks:
+  web:
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 10.5.0.0/16
+         gateway: 10.5.0.1
