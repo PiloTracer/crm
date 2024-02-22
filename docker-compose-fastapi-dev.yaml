@@ -21,7 +21,7 @@ services:
     volumes:
       - ./fastapis/src:/code/fastapis
       - ./uploads/files:/opt/uploads/files
-      - ./uploads/log:/opt/uploads/log/
+      - ./uploads/log:/opt/uploads/log
     #depends_on:
     #  - couchserver
     networks:
