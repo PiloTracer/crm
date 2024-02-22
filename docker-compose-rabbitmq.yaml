@@ -21,6 +21,10 @@ services:
       web:
         ipv4_address: 10.5.0.20
 
+volumes:
+    rabbit_mqdata:
+      driver: local
+
 networks:
   web:
     driver: bridge
