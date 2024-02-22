@@ -3,7 +3,6 @@ from datetime import datetime
 import time
 import json
 import pathlib
-import hashlib
 from typing import List
 import aiofiles
 from fastapi import APIRouter, Depends, UploadFile, HTTPException, status
@@ -13,6 +12,7 @@ import pika
 from dependencies.get_db import \
     get_dbbalance, get_dbtrx, get_dblog, get_dbmerchant, get_dbusr
 from helper.balance import create_balance_trx
+from helper.fileutils import save_uploaded_file
 from helper.merchants import get_fees
 from helper.parsing import validate_parsed
 from models.classes import RabbitMessage, UserApiClass
@@ -450,31 +450,20 @@ def uploads(
 
 @routerpull.post("/filesupload")
 async def filesupload(files: List[UploadFile]):
-    """some docstring"""
+    """Upload multiple files."""
     directory = "/opt/uploads/files"
     prefix = datetime.now().strftime('%Y%m%d')
-    for file in files:
-        try:
-            contents = await file.read()
-            hash256 = hashlib.md5(contents).hexdigest()
-            filename = f'{prefix}_{hash256}_{file.filename}'
-            p = "".join((
-                directory, "/", filename
-            ))
-
-            async with aiofiles.open(f'{p}', 'wb') as f:
-                await f.write(contents)
-                await publishnewfile(filename)
-        except Exception as exc:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail='There was an error uploading the file(s)') from exc
-        finally:
-            await file.close()
-
-    # return {'message': f'Successfuly uploaded
-    # {[file.filename for file in files]}'}
-    return {'message': 'ok', 'msg': "done"}
+    try:
+        uploaded_files = []
+        for file in files:
+            filename = await save_uploaded_file(file, directory, prefix)
+            uploaded_files.append(filename)
+            await publishnewfile(filename)
+        return {'message': 'ok', 'uploaded_files': uploaded_files}
+    # pylint: disable=unused-variable, broad-exception-caught
+    except Exception as exc:  # noqa: F841
+        return {'message': 'nok',
+                'msg': "There was an error uploading the file(s)"}
 
 
 async def publishnewfile(filename):
