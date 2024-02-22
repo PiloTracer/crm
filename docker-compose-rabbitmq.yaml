@@ -14,9 +14,9 @@ services:
       RABBITMQ_DEFAULT_PASS: "rabbitmq"
       RABBITMQ_DEFAULT_VHOST: "/"
     volumes:
-      - /rabbitmq/data/:/var/lib/rabbitmq
-      - /rabbitmq/log/:/var/log/rabbitmq
-      - /rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins
+      - ./rabbitmq/data/:/var/lib/rabbitmq
+      - ./rabbitmq/log/:/var/log/rabbitmq
+      - ./rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins
     labels:
       NAME: "rabbitmq1"
     networks:
