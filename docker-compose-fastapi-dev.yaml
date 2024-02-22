@@ -30,6 +30,7 @@ services:
 
 networks:
   web:
+    name: simple_web
     driver: bridge
     ipam:
      config:

@@ -14,19 +14,31 @@ services:
       RABBITMQ_DEFAULT_PASS: "rabbitmq"
       RABBITMQ_DEFAULT_VHOST: "/"
     volumes:
-      - rabbit_mqdata:/usr/share/rabbitmq/data
+      - rabbitmq_data:/var/lib/rabbitmq
+      - rabbitmq_log:/var/log/rabbitmq
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+    #  - rabbit_mqdata:/usr/share/rabbitmq/data
     labels:
       NAME: "rabbitmq1"
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: always
     networks:
       web:
         ipv4_address: 10.5.0.20
 
 volumes:
-    rabbit_mqdata:
-      driver: local
+  rabbitmq_data:
+    driver: local
+  rabbitmq_log:
+    driver: local
 
 networks:
   web:
+    name: simple_web
     driver: bridge
     ipam:
      config:
