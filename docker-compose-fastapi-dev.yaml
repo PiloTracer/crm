@@ -17,8 +17,6 @@ services:
       - 8888:8888
       - 5678:5678
     environment:
-      - COUCHDB_USER=admin
-      - COUCHDB_PASSWORD=admin123
       - TZ=America/Los_Angeles
     volumes:
       - ./fastapis/src:/code/fastapis

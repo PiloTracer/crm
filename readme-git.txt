@@ -25,5 +25,9 @@ auth: JimenaLikesFifi2020%
 
 as usuall to update:
 1) local
+git commit . -m "some_message"
+git push origin main
+git pull origin main
 
 2) remote
+git pull origin main
