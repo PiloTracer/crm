@@ -23,4 +23,7 @@ git push origin main
 auth: JimenaLikesFifi2020%
 
 
+as usuall to update:
+1) local
 
+2) remote
