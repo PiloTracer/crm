@@ -86,7 +86,7 @@ const DropBox = () => {
   ));
 
   // The base template for the alert
-  if (merchant != "*" && role != "owner") {
+  if (merchant != "*" && ["standard", "admin"].includes(role)) {
     return (
       <>
         <Paper className={scss.transactions}>

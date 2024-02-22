@@ -19,7 +19,8 @@ services:
       - TZ=America/Los_Angeles
     volumes:
       - ./pytap/src:/code/pytap
-      - ./uploads/log:/opt/uploads/log/
+      - ./uploads/files:/opt/uploads/files
+      - ./uploads/log:/opt/uploads/log
     #depends_on:
     #  - rabbitmq
     networks:

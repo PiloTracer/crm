@@ -79,10 +79,14 @@ const PostRequestComponent: React.FC = () => {
 
   return (
     <Box sx={{ padding: 2 }}>
-      <Button variant="contained" color="primary" onClick={sendPostRequest}>
-        Generate API credentials
-      </Button>
-      <Typography variant="h6">NOTE: This action cannot be undone.<br />Once you click, you will need to update your integration with the new credentials.</Typography>
+      {["admin"].includes(role) &&
+        <>
+          <Button variant="contained" color="primary" onClick={sendPostRequest}>
+            Generate API credentials
+          </Button>
+          <Typography variant="h6">NOTE: This action cannot be undone.<br />Once you click, you will need to update your integration with the new credentials.</Typography>
+        </>
+      }
       {response && (
         <Box sx={{ marginTop: 2 }}>
           <Typography variant="h6">Write down the following data in a secure location:</Typography>

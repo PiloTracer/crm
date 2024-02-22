@@ -103,7 +103,7 @@ def validate_data(df, col_name, pattern, limit, maxlen):
     data = df[col_name][:limit]
     r = all(map(lambda x: bool(
         pattern.match(str(x)))
-        and len(str(x)) < maxlen, data))
+        and len(str(x)) <= maxlen, data))
     return r
 
 
@@ -136,7 +136,7 @@ unsafe_patterns = {
     # pylint: disable=line-too-long
     "xss": re.compile(r'''(<script[^>]*>([^<]*)</script>|javascript:[^ ]+)''', re.IGNORECASE),  # noqa: E501
     # pylint: disable=line-too-long
-    "command": re.compile(r'''(bash|sh|cmd|powershell|perl|php|\.\./|[|&;]|[`"]|[\/])''', re.IGNORECASE),  # noqa: E501
+    "command": re.compile(r'(\bbash\b|\bsh\b|\bcmd\b|\bpowershell\b|\bperl\b|\bphp\b|\.\./|[|&;]|[`"]|[\/])', re.IGNORECASE),  # noqa: E501
     "sql": re.compile(r'''
         [\']{1}                   # single quote character
         [^'\\]*(?:                  # non-capture group of optional parts

@@ -14,9 +14,9 @@ services:
       RABBITMQ_DEFAULT_PASS: "rabbitmq"
       RABBITMQ_DEFAULT_VHOST: "/"
     volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-      - rabbitmq_log:/var/log/rabbitmq
-      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+      - ./rabbitmq/data:/var/lib/rabbitmq
+      - ./rabbitmq/log:/var/log/rabbitmq
+      - ./rabbitmq/conf:/etc/rabbitmq/rabbitmq.conf
     #  - rabbit_mqdata:/usr/share/rabbitmq/data
     labels:
       NAME: "rabbitmq1"
@@ -30,11 +30,11 @@ services:
       web:
         ipv4_address: 10.5.0.20
 
-volumes:
-  rabbitmq_data:
-    driver: local
-  rabbitmq_log:
-    driver: local
+#volumes:
+#  rabbitmq_data:
+#    driver: local
+#  rabbitmq_log:
+#    driver: local
 
 networks:
   web:
