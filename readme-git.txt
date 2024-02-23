@@ -1,3 +1,6 @@
+add file:
+git add fileutils.py
+
 local clone:
 git clone https://PiloTracer@github.com/PiloTracer/crm.git
 lightsail clone:
