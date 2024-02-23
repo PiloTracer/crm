@@ -19,6 +19,8 @@ git config --global user.name "ACS PiloTracer"
 git commit -m "Initial project"
 git push origin main
 
+reset:
+sudo git reset --hard
 
 auth: JimenaLikesFifi2020%
 

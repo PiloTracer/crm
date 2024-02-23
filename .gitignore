@@ -7,6 +7,7 @@
 readme*.*
 bin/PRD/*
 bin/dev/*
+tmp_*
 
 # User-specific files
 *.rsuser

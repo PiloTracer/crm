@@ -17,8 +17,8 @@ services:
     environment:
       - TZ=America/Los_Angeles
     volumes:
-      - /home/ubuntu/crm/uploads/files:/opt/uploads/files
-      - /home/ubuntu/crm/uploads/log:/opt/uploads/log
+      - ./uploads/files:/opt/uploads/files
+      - ./uploads/log:/opt/uploads/log
     networks:
       web:
         ipv4_address: 10.5.0.6
