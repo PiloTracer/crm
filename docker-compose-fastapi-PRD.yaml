@@ -6,8 +6,6 @@ services:
     build:
       context: ./fastapis/src
       dockerfile: ../../Dockerfile.fastapis.PRD
-      args: 
-        env: prd
     command: uvicorn main:app --host 0.0.0.0 --port 8000
     hostname: srv.fastapis
     ports:
