@@ -474,11 +474,14 @@ async def filesupload(files: List[UploadFile]):
 
 async def publishnewfile(filename):
     '''publishing a message to rabbitmq'''
+    vdate, vchecksum, merch = \
+        filename.split("_")  # pylint: disable=unused-variable # noqa: w0612
     message: RabbitMessage = RabbitMessage()
     message.type = "upload"
     message.channel = "rabbitbroker"
     message.header = "newfile"
     message.message = filename
+    message.merchant = merch
 
     credentials = pika.PlainCredentials('rabbitmq', 'rabbitmq')
     connection = pika.BlockingConnection(

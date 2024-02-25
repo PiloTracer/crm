@@ -17,6 +17,7 @@ COPY . .
 #RUN chmod +x listener.py
 
 EXPOSE 80
+EXPOSE 6789
 
 #ENV PYTHONUNBUFFERED=1
 

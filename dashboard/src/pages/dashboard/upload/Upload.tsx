@@ -1,7 +1,8 @@
 import React from 'react';
-import DropBox from '@/components/Dashboard/DropBox';
+import Uploads from '@/components/Dashboard/Uploads';
 import { useSession } from "next-auth/react";
 import scss from "@/components/Layout/Layout.module.scss";
+import UploadResultsGrid from '@/components/Dashboard/UploadResults/UploadResults';
 
 const Upload = () => {
     const { data: session } = useSession();
@@ -9,13 +10,12 @@ const Upload = () => {
     return (
         <>
             <main className={scss.main}>
-                <DropBox>
-                </DropBox>
+                <Uploads />
+                <UploadResultsGrid />
             </main>
         </>
     )
 }
 
 export default Upload;
-
 

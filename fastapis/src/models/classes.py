@@ -11,6 +11,7 @@ class RabbitMessage(BaseModel):
     channel: str = None
     header: str = None
     message: str = None
+    merchant: str = None
 
     def to_dict(self):
         """convert to dict"""

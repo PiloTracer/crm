@@ -6,7 +6,6 @@ import {
   // createRow,
   type MRT_ColumnDef,
   type MRT_Row,
-  type MRT_TableOptions,
   useMaterialReactTable,
 } from 'material-react-table';
 import {
@@ -15,8 +14,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  IconButton,
-  Tooltip,
 } from '@mui/material';
 import {
   QueryClient,
@@ -25,8 +22,6 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { mkConfig, generateCsv, download } from 'export-to-csv'; //or use your library of choice here
 import axios from 'axios';
@@ -35,7 +30,7 @@ import { useSession } from 'next-auth/react';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import React from 'react';
-import { useUpdateGridContext } from '@/components/Context/BalanceContext';
+import { config } from '../../../../config/config';
 
 const csvConfig = mkConfig({
   fieldSeparator: ',',
@@ -50,8 +45,7 @@ type Request = {
 
 let data: Transaction[] = [];
 
-const BalancesTable = () => {
-  const { needsUpdate, setNeedsUpdate } = useUpdateGridContext();
+const UploadResultsTable = () => {
   const { data: session } = useSession();
   const merchant: string = session?.user?.xmerchant;
   const [validationErrors, setValidationErrors] = useState<
@@ -81,13 +75,6 @@ const BalancesTable = () => {
   }, [session?.user]);
 
   const { refetch } = useGetTransactions(req); // Make sure this is the correct hook from your implementation
-  useEffect(() => {
-    if (needsUpdate) {
-      refetch(); // This refetches the data for BalanceGrid
-      setNeedsUpdate(false); // Reset the update flag
-    }
-  }, [needsUpdate, refetch, setNeedsUpdate]);
-
 
   const handleExportRows = (rows: MRT_Row<Transaction>[]) => {
     const rowData = rows.map((row) => row.original);
@@ -139,54 +126,6 @@ const BalancesTable = () => {
     isFetching: isFetchingTransactions,
     isLoading: isLoadingTransactions,
   } = useGetTransactions(req);
-  //call UPDATE hook
-  const { mutateAsync: updateTransaction, isPending: isUpdatingTransaction } =
-    useUpdateTransaction(id, merchant);
-  //call DELETE hook
-  const { mutateAsync: deleteTransaction, isPending: isDeletingTransaction } =
-    useDeleteTransaction();
-  //call CREATE hook
-  const { mutateAsync: createTransaction, isPending: isCreatingTransaction } =
-    useCreateTransaction(merchant, id);
-
-  //CREATE action
-  const handleCreateTransaction: MRT_TableOptions<Transaction>['onCreatingRowSave'] = async ({
-    values,
-    table,
-  }) => {
-    //console.log("handleCreateTransaction");
-    const newValidationErrors = validateTransaction(values);
-    if (Object.values(newValidationErrors).some((error) => error)) {
-      setValidationErrors(newValidationErrors);
-      return;
-    }
-    setValidationErrors({});
-    await createTransaction(values);
-    table.setCreatingRow(null); //exit creating mode
-  };
-
-  //UPDATE action
-  const handleSaveTransaction: MRT_TableOptions<Transaction>['onEditingRowSave'] = async ({
-    values,
-    table,
-  }) => {
-    //console.log("handleSaveTransaction");
-    const newValidationErrors = validateTransaction(values);
-    if (Object.values(newValidationErrors).some((error) => error)) {
-      setValidationErrors(newValidationErrors);
-      return;
-    }
-    setValidationErrors({});
-    await updateTransaction(values);
-    table.setEditingRow(null); //exit editing mode
-  };
-
-  //DELETE action
-  const openDeleteConfirmModal = (row: MRT_Row<Transaction>) => {
-    if (window.confirm('Are you sure you want to delete this transaction?')) {
-      deleteTransaction(0);
-    }
-  };
 
   const table = useMaterialReactTable({
     columns,
@@ -216,7 +155,7 @@ const BalancesTable = () => {
     },
     muiPaginationProps: {
       color: 'secondary',
-      rowsPerPageOptions: [10, 25, 50],
+      rowsPerPageOptions: [10, 50, 100],
       shape: 'rounded',
       variant: 'outlined',
     },
@@ -251,12 +190,6 @@ const BalancesTable = () => {
         fontSize: '12px'
       },
     }),
-    onCreatingRowCancel: () => setValidationErrors({}),
-    onCreatingRowSave: handleCreateTransaction,
-    onEditingRowCancel: () => setValidationErrors({}),
-    onEditingRowSave: handleSaveTransaction,
-
-
 
     //optionally customize modal content
     renderCreateRowDialogContent: ({ table, row, internalEditComponents }) => (
@@ -285,20 +218,6 @@ const BalancesTable = () => {
           <MRT_EditActionButtons variant="text" table={table} row={row} />
         </DialogActions>
       </>
-    ),
-    renderRowActions: ({ row, table }) => (
-      <Box sx={{ display: 'flex', gap: '1rem' }}>
-        <Tooltip title="Edit">
-          <IconButton onClick={() => table.setEditingRow(row)}>
-            <EditIcon />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Delete">
-          <IconButton color="error" onClick={() => openDeleteConfirmModal(row)}>
-            <DeleteIcon />
-          </IconButton>
-        </Tooltip>
-      </Box>
     ),
     renderTopToolbarCustomActions: ({ table }) => (
       false && <Box
@@ -356,11 +275,39 @@ const BalancesTable = () => {
     ),
     state: {
       isLoading: isLoadingTransactions,
-      isSaving: isCreatingTransaction || isUpdatingTransaction || isDeletingTransaction,
       showAlertBanner: isLoadingTransactionsError,
       showProgressBars: isFetchingTransactions,
     },
   });
+
+  // WebSocket setup
+  useEffect(() => {
+    const ws = new WebSocket(config.API_URL_WEBSOCKETS);
+
+    ws.onopen = () => {
+      console.log('Connected to WebSocket server');
+    };
+
+    ws.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      // Check if the message contains a specific value
+      if (message.merchant === merchant) {
+        refetch(); // Refetch the data if the condition is met
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    ws.onclose = () => {
+      console.log('Disconnected from WebSocket server');
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, [refetch]); // Add refetch to the dependency array
 
   return <MaterialReactTable table={table} />;
 };
@@ -417,7 +364,7 @@ function useCreateTransaction(merchant: string, id: string) {
         });
       });
     },
-    // onSettled: () => queryClient.invalidateQueries({ queryKey: ['transactions'] }), //refetch transactions after mutation, disabled for demo
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['transactions'] }), //refetch transactions after mutation, disabled for demo
   });
 }
 
@@ -437,7 +384,7 @@ const fetchDataFromApi = async (req: Request) => {
     var result = await response.data;
     return result;
   } catch (error) {
-    console.error('Error fetching data:', error);
+    console.error('Error fetching data:', req);
   }
   return [];
 };
@@ -476,37 +423,18 @@ function useUpdateTransaction(id: string, merchant: string) {
   });
 }
 
-//DELETE hook (delete transaction in api)
-function useDeleteTransaction(amountsign: number = 0) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (amountsign: number) => { //amountsign instead of transactionId
-      //send api update request here
-      await new Promise((resolve) => setTimeout(resolve, 1000)); //fake api call
-      return Promise.resolve();
-    },
-    //client side optimistic update
-    onMutate: (amountsign: number) => { //amountsign instead of transactionId
-      queryClient.setQueryData(['transactions'], (prevTransactions: any) =>
-        prevTransactions?.filter((transaction: Transaction) => transaction.value.amntsign !== amountsign), //_id instead of amntsign,  //amountsign instead of transactionId
-      );
-    },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['transactions'] }),
-  });
-}
-
 const queryClient = new QueryClient();
 
-const BalanceGrid = () => (
+const UploadResultsGrid = () => (
   //Put this with your other react-query providers near root of your app
   <LocalizationProvider dateAdapter={AdapterDayjs}>
     <QueryClientProvider client={queryClient}>
-      <BalancesTable />
+      <UploadResultsTable />
     </QueryClientProvider>
   </LocalizationProvider>
 );
 
-export default BalanceGrid;
+export default UploadResultsGrid;
 
 const validateRequired = (value: string) => !!value.length;
 const validateEmail = (email: string) =>

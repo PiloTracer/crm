@@ -3,13 +3,13 @@ import { useDropzone } from 'react-dropzone';
 import axios from 'axios';
 import { useTheme } from "@mui/system";
 import { Typography } from '@mui/material';
-import scss from "./DropBox.module.scss";
+import scss from "./Uploads.module.scss";
 import { Card, Grid, Paper, Box } from "@mui/material";
 import { useSession } from 'next-auth/react';
 import { error } from 'console';
 import { config } from '../../../../config/config';
 
-const DropBox = () => {
+const Uploads = () => {
   type Response = {
     id: string,
     access_token: string
@@ -143,4 +143,4 @@ const DropBox = () => {
 
 }
 
-export default DropBox;
+export default Uploads;

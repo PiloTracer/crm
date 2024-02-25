@@ -47,6 +47,7 @@ RUN chmod +x listener.py
 
 # Inform Docker that the container is listening on the specified port at runtime.
 EXPOSE 80
+EXPOSE 6789
 
 # Run receiver.py when the container launches
 ENTRYPOINT ["python3", "receiver.py"]
