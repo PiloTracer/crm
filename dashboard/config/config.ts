@@ -13,5 +13,6 @@ export const config = {
   API_URL_USERCREATE : 'http://10.5.0.6:8000/messages/user/signup',
   API_URL_USERDELETE : 'http://10.5.0.6:8000/messages/user/delete',
   API_URL_USERACTDEACT : 'http://10.5.0.6:8000/messages/user/activate_deactivate',
-  API_URL_MERCHANTS_ACTIVE : 'http://10.5.0.6:8000/merchant/listactive'
+  API_URL_MERCHANTS_ACTIVE : 'http://10.5.0.6:8000/merchant/listactive',
+  API_URL_RABBIT_UPLOAD : 'http://10.5.0.20:5672',
 };

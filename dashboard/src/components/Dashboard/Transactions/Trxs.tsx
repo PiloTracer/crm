@@ -120,6 +120,7 @@ const Example: React.FC = () => {
         accessorFn: (originalRow) => new Date(originalRow?.createdf), //convert to date for sorting and filtering
         id: 'createdf',
         header: 'Created',
+        enableColumnFilter: true,
         enableEditing: false,
         filterVariant: 'datetime-range',
         Cell: ({ cell }) =>
@@ -138,6 +139,7 @@ const Example: React.FC = () => {
         accessorKey: "trxtype",
         header: "Subtype",
         enableEditing: false,
+        enableColumnFilter: false,
         Edit: () => null
       },
       {
@@ -150,6 +152,7 @@ const Example: React.FC = () => {
         header: "File id",
         enableEditing: false,
         enableHiding: true,
+        enableColumnFilter: false,
         visibleInShowHideMenu: false,
         Edit: () => null
       },
@@ -160,6 +163,8 @@ const Example: React.FC = () => {
         muiTableBodyCellProps: {
           align: 'right',
         },
+        enableColumnFilter: true,
+        filterVariant: 'range',
         Cell: ({ cell }) => (
           <>
             {cell.getValue<number>()?.toLocaleString?.('en-US', {
@@ -169,12 +174,35 @@ const Example: React.FC = () => {
               maximumFractionDigits: 2,
             })}
           </>
-        )
+        ),
+        /*filterFn: (row, columnId, filterValue, addMeta) => {
+         // Assuming the filterValue is a string like "<2000"
+         const filterNumber = parseFloat(filterValue.replace(/[^\d.-]/g, ''));
+ 
+         const rowValue = row.original[columnId as keyof Transaction] as number;
+ 
+         if (!filterValue || isNaN(filterNumber) || isNaN(rowValue)) {
+           return true; // no filter applied
+         }
+ 
+         if (filterValue.startsWith('<')) {
+           return rowValue < filterNumber;
+         } else if (filterValue.startsWith('>')) {
+           return rowValue > filterNumber;
+         } else if (filterValue.startsWith('=')) {
+           return rowValue === filterNumber;
+         }
+         // Add more conditions as needed
+ 
+         return true; // default to true if no condition is met
+       },
+       filterValue: (row: any) => parseFloat(row.amount), */
       },
       {
         accessorKey: "fees",
         header: "Fees",
         enableEditing: false,
+        enableColumnFilter: false,
         muiTableBodyCellProps: {
           align: 'right',
         },
@@ -193,18 +221,21 @@ const Example: React.FC = () => {
         accessorKey: "cxname",
         header: "Name",
         enableEditing: false,
+        enableColumnFilter: false,
         Edit: () => null
       },
       {
         accessorKey: "routing",
         header: "Routing",
         enableEditing: false,
+        enableColumnFilter: false,
         Edit: () => null
       },
       {
         accessorKey: "bankaccount",
         header: "Bank Acct",
         enableEditing: false,
+        enableColumnFilter: false,
         Edit: () => null
       },
       {
@@ -212,6 +243,7 @@ const Example: React.FC = () => {
         header: "T",
         editVariant: 'select',
         enableEditing: false,
+        enableColumnFilter: false,
         editSelectOptions: [
           "c",
           "s",
@@ -224,12 +256,13 @@ const Example: React.FC = () => {
         accessorKey: "email",
         header: "Email",
         enableEditing: false,
+        enableColumnFilter: false,
         Edit: () => null
       },
       {
         accessorKey: "address",
         header: "Address",
-        enableEditing: false,
+        enableColumnFilter: false,
         Edit: () => null
       },
       {
@@ -276,6 +309,7 @@ const Example: React.FC = () => {
         accessorKey: "reference",
         header: "Reference",
         enableEditing: ["admin", "owner"].includes(role),
+        enableColumnFilter: false,
         muiEditTextFieldProps: {
           required: false,
           error: !!validationErrors?.reference,
@@ -294,6 +328,7 @@ const Example: React.FC = () => {
         header: "Descriptor",
         /*size: 200,*/
         enableEditing: ["admin", "owner"].includes(role),
+        enableColumnFilter: false,
         muiEditTextFieldProps: {
           required: false,
           error: !!validationErrors?.descriptor,
@@ -311,6 +346,7 @@ const Example: React.FC = () => {
         accessorKey: "reason",
         header: "Reason",
         enableEditing: ["admin", "owner"].includes(role),
+        enableColumnFilter: false,
         muiEditTextFieldProps: {
           required: false,
           error: !!validationErrors?.reason,
@@ -393,12 +429,22 @@ const Example: React.FC = () => {
     columns,
     enableColumnFilterModes: true,
     enableColumnPinning: true,
-    enableColumnActions: ["admin", "owner"].includes(role),
+    enableColumnActions: true,
     initialState: {
       density: 'compact', columnVisibility: { parent: false, _id: false, type: false },
       columnPinning: {
         left: ['mrt-row-expand', 'mrt-row-select'],
-        right: ['mrt-row-actions'],
+        right: role == "owner" ? ['mrt-row-actions'] : [],
+      },
+      sorting: [
+        {
+          id: 'created',
+          desc: true
+        }
+      ],
+      pagination: {
+        pageSize: 50, // Set your default number of rows per page here
+        pageIndex: 0, // This sets the initial page index (0 for the first page)
       },
     },
     paginationDisplayMode: 'pages',
@@ -417,7 +463,7 @@ const Example: React.FC = () => {
     },
     muiPaginationProps: {
       color: 'secondary',
-      rowsPerPageOptions: [10, 20, 30],
+      rowsPerPageOptions: [50, 250, 500],
       shape: 'rounded',
       variant: 'outlined',
     },
@@ -429,7 +475,7 @@ const Example: React.FC = () => {
       : undefined,
     //muiTableContainerProps: {
     //  sx: {
-    //    minHeight: '500px',
+    //    minHeight: 'auto',
     //  },
     //},
     muiTableHeadCellProps: {
@@ -488,14 +534,12 @@ const Example: React.FC = () => {
       </>
     ),
     renderRowActions: ({ row, table }) => (
-      <Box sx={{ display: 'flex', gap: '1rem' }}>
-        {role == "owner" &&
-          <Tooltip title="Edit">
-            <IconButton color="success" onClick={() => table.setEditingRow(row)}>
-              <EditIcon />
-            </IconButton>
-          </Tooltip>
-        }
+      role == "owner" && <Box sx={{ display: 'flex', gap: '1rem' }}>
+        <Tooltip title="Edit">
+          <IconButton color="success" onClick={() => table.setEditingRow(row)}>
+            <EditIcon />
+          </IconButton>
+        </Tooltip>
         {/* <Tooltip title="Delete">
           <IconButton color="error" onClick={() => openDeleteConfirmModal(row)}>
             <DeleteIcon />

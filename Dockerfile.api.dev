@@ -1,13 +1,21 @@
-FROM node:21-alpine3.18
+FROM node:21.6.2-alpine3.18
 
 RUN apk update
 RUN apk add --no-cache tzdata
+#RUN apt update
+#RUN apt install tzdata
 
 ENV TZ=America/Los_Angeles
 
 WORKDIR /code/api/run
+
+# Copy package.json and package-lock.json
+COPY ./run/package*.json ./
+
+# Install dependencies
+RUN npm install
+
 COPY ./run .
-RUN npm install 
 
 EXPOSE 3000
 CMD ["npm", "run", "dev"]

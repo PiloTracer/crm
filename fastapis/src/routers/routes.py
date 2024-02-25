@@ -13,6 +13,7 @@ from dependencies.jwt import create_access_token, get_current_user, validate_use
 from dependencies.get_db import get_dbusr
 from controllers.save_message import save_message_user, get_message_login, validate_request
 from helper.api import generate_api_key, generate_secret_word
+from helper.db_delete_docs import delete_docs_except_design_views
 from models.model import MessageGeneralSchema, MessageResponseSchema, \
     MessageSchema, UserApiCreate, UserLoginSchema
 from models.classes import UserClass, UserPwdClass
@@ -199,3 +200,12 @@ async def user_activate_deactivate(
     else:
         doc["message"] = "nok"
     return doc
+
+
+@router.delete("/delete_docs/{db_name}")
+async def delete_docs(db_name: str):
+    '''endpoint to delete database documents'''
+    success, message = delete_docs_except_design_views(db_name)
+    if not success:
+        raise HTTPException(status_code=404, detail=message)
+    return {"message": message}

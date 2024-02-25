@@ -6,8 +6,13 @@ docker exec -it ollama ollama pull codellama
 
 docker exec -it ollama ollama run codellama
 
+docker exec -it ollama ollama run mistral
 
 docker exec -it ollama ollama run llama2
+
+docker exec -it ollama ollama run llama2:70b
+
+ollama run llama2:70b
 
 ollama pull mistral
 

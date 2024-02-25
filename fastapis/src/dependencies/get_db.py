@@ -48,6 +48,20 @@ def get_dblog():
     return db
 
 
+def get_dblogtrx():
+    '''get db for users'''
+    settings = SettingsLog()
+    couch = Server(url=settings.couchdb_host)
+    couch.resource.credentials = (
+        settings.couchdb_name, settings.couchdb_password)
+    try:
+        db = couch[settings.couchdb_database]
+    except Exception:  # pylint: disable=broad-except
+        db = couch.create(settings.couchdb_database)
+
+    return db
+
+
 def get_dbmerchant():
     '''get db for users'''
     settings = SettingsMerchant()

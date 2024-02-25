@@ -177,8 +177,10 @@ class TrxHeadEcheck(BaseModel):
     duplicate: Optional[bool] = False
     total: Optional[float] = 0
     sum: Optional[float] = 0
-    created: Optional[float] = 0
-    modified: Optional[float] = 0
+    createds: Optional[float] = 0
+    modifieds: Optional[float] = 0
+    created: Optional[int] = 0
+    modified: Optional[int] = 0
 
     def to_dict(self):
         """convert to dict"""
@@ -202,6 +204,8 @@ class TrxHeadEcheck(BaseModel):
             'sum': self.sum,
             'created': self.created,
             'modified': self.modified,
+            'createds': self.created,
+            'modifieds': self.modified
         }
 
 

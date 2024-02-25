@@ -1,9 +1,9 @@
-import { config } from '../../../../config/config';
+import { config } from '../../../../../config/config';
 import NodeCache from 'node-cache';
 import axios from 'axios';
 import crypto from 'crypto';
-import { isvalidJSON, lowercaseObject } from '../../../helper/Sanitize';
-import { validateData } from '../../../helper/Validate';
+import { isvalidJSON, lowercaseObject } from '../../../../helper/Sanitize';
+import { validateData } from '../../../../helper/Validate';
 
 const myCache = new NodeCache({ stdTTL: 300, checkperiod: 30 });
 

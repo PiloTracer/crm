@@ -281,7 +281,7 @@ const Users: React.FC<UserProps> = ({ mactive }) => {
     },
     muiPaginationProps: {
       color: 'secondary',
-      rowsPerPageOptions: [10, 20, 30],
+      rowsPerPageOptions: [5, 10, 20],
       shape: 'rounded',
       variant: 'outlined',
     },

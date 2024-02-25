@@ -50,7 +50,7 @@ type Request = {
 
 let data: Transaction[] = [];
 
-const Example = () => {
+const BalancesTable = () => {
   const { needsUpdate, setNeedsUpdate } = useUpdateGridContext();
   const { data: session } = useSession();
   const merchant: string = session?.user?.xmerchant;
@@ -216,7 +216,7 @@ const Example = () => {
     },
     muiPaginationProps: {
       color: 'secondary',
-      rowsPerPageOptions: [10, 20, 30],
+      rowsPerPageOptions: [50, 250, 500],
       shape: 'rounded',
       variant: 'outlined',
     },
@@ -501,7 +501,7 @@ const BalanceGrid = () => (
   //Put this with your other react-query providers near root of your app
   <LocalizationProvider dateAdapter={AdapterDayjs}>
     <QueryClientProvider client={queryClient}>
-      <Example />
+      <BalancesTable />
     </QueryClientProvider>
   </LocalizationProvider>
 );

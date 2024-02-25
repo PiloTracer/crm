@@ -167,10 +167,12 @@ const Example: React.FC<UserProps> = ({ mactive }) => {
       {
         accessorKey: "amnt",
         header: "Amount",
-        enableEditing: true,
+        enableEditing: false,
         muiTableBodyCellProps: {
           align: 'right',
         },
+        enableColumnFilter: true,
+        filterVariant: 'range',
         Cell: ({ cell }) => (
           <>
             {cell.getValue<number>()?.toLocaleString?.('en-US', {
@@ -477,7 +479,11 @@ const Example: React.FC<UserProps> = ({ mactive }) => {
           id: 'created',
           desc: true
         }
-      ]
+      ],
+      pagination: {
+        pageSize: 50, // Set your default number of rows per page here
+        pageIndex: 0, // This sets the initial page index (0 for the first page)
+      },
     },
     paginationDisplayMode: 'pages',
     data: fetchedTransactions,
@@ -495,7 +501,7 @@ const Example: React.FC<UserProps> = ({ mactive }) => {
     },
     muiPaginationProps: {
       color: 'secondary',
-      rowsPerPageOptions: [10, 20, 30],
+      rowsPerPageOptions: [50, 250, 500],
       shape: 'rounded',
       variant: 'outlined',
     },

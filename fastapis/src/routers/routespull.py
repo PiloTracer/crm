@@ -423,8 +423,14 @@ def uploads(
                     doc.ext = ext
                     doc.path = directory
                     doc.size = entry.stat().st_size
-                    doc.created = entry.stat().st_ctime
-                    doc.modified = entry.stat().st_mtime
+                    doc.createds = entry.stat().st_ctime
+                    doc.modifieds = entry.stat().st_mtime
+                    doc.created = \
+                        int(datetime.fromtimestamp(doc.createds).
+                            strftime('%Y%m%d%H%M%S'))
+                    doc.modified = \
+                        int(datetime.fromtimestamp(doc.modifieds).
+                            strftime('%Y%m%d%H%M%S'))
                     doc.content = ""
                     doc.fullpath = f"{directory}{entry.name}"
                     doc.duplicate = False

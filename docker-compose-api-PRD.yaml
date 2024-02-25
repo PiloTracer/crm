@@ -8,11 +8,13 @@ services:
       context: ./api
       dockerfile: ../Dockerfile.api.PRD
     ports:
-      - 0.0.0.0:6000:3000
-      - 0.0.0.0:6007:3007
-      - 0.0.0.0:6001:3001
-      - 0.0.0.0:10229:9229
-      - 0.0.0.0:10222:9222
+      - "6300:3000"
+      #- "6000:3000"
+      - "6007:3007"
+      - "6001:3001"
+      - "10229:9229"
+      - "10222:9222"
+      - "7006:6006" #storybook
     environment:
       - NODE_ENV=production
       - TZ=America/Los_Angeles

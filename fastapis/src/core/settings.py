@@ -42,6 +42,17 @@ class SettingsLog():
         datetime.now().strftime('%Y%m%d')}.log"
 
 
+class SettingsLogTrx():
+    '''Settings for log database'''
+    app_name: str = "W-Financial"
+    couchdb_name: str = os.getenv("COUCHDBLOGTRX_couchdb_name")
+    couchdb_password: str = os.getenv("COUCHDBLOGTRX_couchdb_password")
+    couchdb_host: str = os.getenv("COUCHDBLOGTRX_couchdb_host")
+    couchdb_database: str = os.getenv("COUCHDBLOGTRX_couchdb_database")
+    file_path: str = f"{os.getenv("COUCHDBLOGTRX_file_path")}logtrx_{
+        datetime.now().strftime('%Y%m%d')}.log"
+
+
 class SettingsMerchant():
     '''Settings for log database'''
     app_name: str = "W-Financial"
