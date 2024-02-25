@@ -15,6 +15,7 @@ tmp_*
 *.user
 *.userosscache
 *.sln.docstates
+*.xlsx
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
