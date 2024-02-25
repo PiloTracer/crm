@@ -8,6 +8,7 @@ readme*.*
 bin/PRD/*
 bin/dev/*
 tmp_*
+rabbitmq/data/*
 
 # User-specific files
 *.rsuser

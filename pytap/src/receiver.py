@@ -1,10 +1,45 @@
 #!/usr/bin/python
 
 '''rabbitmq test listener'''
+import asyncio
+import websockets
+import pika
+import threading
 import json
 import requests
-import pika
 import logging
+
+# Global set to keep track of connected WebSocket clients
+connected_clients = set()
+
+# Function to register a new WebSocket client
+async def register_client(websocket):
+    connected_clients.add(websocket)
+
+# Function to unregister a disconnected WebSocket client
+async def unregister_client(websocket):
+    connected_clients.remove(websocket)
+
+# WebSocket server handler
+async def websocket_server_handler(websocket, path):
+    await register_client(websocket)
+    try:
+        await websocket.wait_closed()
+    finally:
+        await unregister_client(websocket)
+
+# Function to broadcast messages to all connected WebSocket clients
+async def broadcast_message(message):
+    if connected_clients:  # Check if there are any connected clients
+        #await asyncio.wait([client.send(message) for client in connected_clients])
+        await asyncio.gather(*(client.send(message) for client in connected_clients))
+
+# Start the WebSocket server
+def start_websocket_server():
+    start_server = websockets.serve(websocket_server_handler, "localhost", 6789)
+    asyncio.get_event_loop().run_until_complete(start_server)
+    asyncio.get_event_loop().run_forever()
+
 
 class RabbitMQConsumer:
 
@@ -18,13 +53,13 @@ class RabbitMQConsumer:
 
     def on_channel_open(self, channel):
         self.channel = channel
-        self.channel.queue_declare(queue='newfile', callback=self.on_queue_declared)
+        self.channel.queue_declare(queue='rabbitbroker', callback=self.on_queue_declared)
 
     def on_queue_declared(self, method_frame):
-        self.channel.basic_consume('newfile', self.handle_delivery)
+        self.channel.basic_consume('rabbitbroker', self.handle_delivery)
         print('Waiting for messages. To exit, press Ctrl+C')
 
-    def handle_delivery(self, channel, method, header, body):
+    async def handle_delivery(self, channel, method, header, body):
         print(f"Receiving...")
         '''handles the reception of RMQ messages'''
         m = body.decode("utf-8")
@@ -35,11 +70,14 @@ class RabbitMQConsumer:
         logging.debug(m)
         message = json.loads(m)
         url = ""
-        if message["type"] == "upload" and message["channel"] == "newfile":
+        if message["type"] == "upload" and message["header"] == "newfile":
             url = f"http://10.5.0.6:8000/pull/loadfile?filename={message["message"]}"
-        if url != "":
             response = requests.get(url, timeout=5)
             print(f"Received message: {str(response.status_code)} {url}")
+        elif message["type"] == "upload" and message["header"] == "uploadresult":
+            print(f"Received message: routed to websockets server")
+            #await broadcast_message(message)
+            asyncio.run(broadcast_message(message))
         else:
             print(f"Received message: error... message not understood")
         # end with the acknowledgement of reception
@@ -60,6 +98,18 @@ class RabbitMQConsumer:
             # Loop until we're fully closed, will stop on its own
             self.connection.ioloop.start()
 
-if __name__ == '__main__':
+# Start the RabbitMQ consumer in a separate thread
+def start_rabbitmq_consumer():
     consumer = RabbitMQConsumer()
     consumer.run()
+
+# Main function to start both servers
+def main():
+    # Start RabbitMQ consumer in a separate thread
+    threading.Thread(target=start_rabbitmq_consumer, daemon=True).start()
+    # Start WebSocket server
+    start_websocket_server()
+
+
+if __name__ == '__main__':
+    main()
