@@ -5,16 +5,20 @@ FROM base AS python-deps
 RUN apk update
 RUN apk add --no-cache tzdata
 RUN pip install --upgrade pip
-ENV TZ=America/Los_Angeles
 
-WORKDIR /code/fastapis
+WORKDIR /code/sock
 
 COPY requirements.txt ./
+#RUN pip install --trusted-host pypi.python.org -r requirements.txt
 RUN pip install --no-cache-dir --upgrade  -r requirements.txt
 
 COPY . .
 
-# Expose the port the app runs on
-EXPOSE 8000
+#RUN chmod +x broadcaster.py
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+EXPOSE 6789
+
+#ENV PYTHONUNBUFFERED=1
+
+ENTRYPOINT ["python3", "broadcaster.py"]
+

@@ -1,27 +1,24 @@
 version: '3.8'
 services:
-  messaging:
-    image: pytap_i
-    container_name: pytap_c
+  websocking:
+    image: sock_i
+    container_name: sock_c
     build:
-      context: ./pytap/src
-      dockerfile: ../../Dockerfile.pytap.PRD
+      context: ./sock/src
+      dockerfile: ../../Dockerfile.sock.PRD
       args: 
         env: prd
     restart: always
-    hostname: srv.pytap
+    hostname: srv.sock
     ports:
-      - 8001:8000
-      - 8889:8888
-      - 5679:5678
-      - 4000:80
+      - 7789:6789
     environment:
       - TZ=America/Los_Angeles
     volumes:
-      - ./uploads/pytap/log:/opt/uploads/pytap/log
+      - ./uploads/sock/log:/opt/uploads/sock/log
     networks:
       web:
-        ipv4_address: 10.5.0.2
+        ipv4_address: 10.5.0.7
 
 networks:
   web:

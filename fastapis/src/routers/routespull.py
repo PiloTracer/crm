@@ -11,6 +11,7 @@ import pandas
 import pika
 from dependencies.get_db import \
     get_dbbalance, get_dbtrx, get_dblog, get_dbmerchant, get_dbusr
+from core.settings import Settings
 from helper.balance import create_balance_trx
 from helper.fileutils import save_uploaded_file
 from helper.merchants import get_fees
@@ -45,8 +46,9 @@ async def updatetrx(
     # dbm: Server = Depends(get_dbmerchant)
 ):
     '''method docstring'''
+    settings = Settings()
+    directory = settings.general_log_path
     actions: List[str] = []
-    directory = "/opt/uploads/log"
     doc_id = ""  # pylint: disable=unused-variable
     doc_rev = ""  # pylint: disable=unused-variable
     doc = {"message": "nok"}
@@ -291,14 +293,15 @@ def uploads(
     dbm: Server = Depends(get_dbmerchant)
 ):
     '''method description'''
-    directory = "/opt/uploads/files/"
+    settings = Settings()
+    directory = settings.general_upload_path
     validation_results = {"status": "nok"}
 
     file_list = []
     inserted_document_ids = []
     week_ago = time.time() - 7 * 24 * 60 * 60
 
-    o_file = pathlib.Path(f'{directory}{filename}')
+    o_file = pathlib.Path(f'{directory}/{filename}')
     message: MessageSchema = MessageSchema(status='ok', message='Success')
 
     if o_file.exists():
@@ -354,14 +357,14 @@ def uploads(
             if ext == ".xlsx":
                 excel_data_df = \
                     pandas.read_excel(
-                        f"{directory}{entry.name}",
+                        f"{directory}/{entry.name}",
                         sheet_name='E-Check',
                         engine='openpyxl',
                         header=0,
                         converters={
                             'CX Name': str,
                             'Customer Account': str,
-                            'Amount': float,
+                            'Amount': str,
                             'Routing #': str,
                             'Bank Account #': str})\
                     .assign(parent=col[1])\
@@ -369,8 +372,12 @@ def uploads(
                         columns=lambda x: x.strip().
                         replace(" ", "").
                         replace("#", "").lower())
-                for column in \
-                        excel_data_df.select_dtypes(include=[object]).columns:
+                for column in excel_data_df.select_dtypes(include=[object]).columns:  # noqa: E501
+                    # Remove leading and trailing spaces
+                    excel_data_df[column] = excel_data_df[column].str.strip()
+                    excel_data_df[column] = excel_data_df[column].str.replace(
+                        r'\s+', ' ', regex=True)  # Convert multiple spaces to one # noqa: E501
+                    # Convert to lower case
                     excel_data_df[column] = excel_data_df[column].str.lower()
 
                 # Get a string with all the column
@@ -387,6 +394,7 @@ def uploads(
                 for t in tmp:
                     try:
                         line: TrxRowEcheck = TrxRowEcheck(*t)
+                        line.amount = float(line.amount)
                     except Exception as e:  # pylint: disable=broad-except
                         detail = f'There was an error hydrating row: {e}'
                         return detail
@@ -432,7 +440,7 @@ def uploads(
                         int(datetime.fromtimestamp(doc.modifieds).
                             strftime('%Y%m%d%H%M%S'))
                     doc.content = ""
-                    doc.fullpath = f"{directory}{entry.name}"
+                    doc.fullpath = f"{directory}/{entry.name}"
                     doc.duplicate = False
                     doc.count = count
                     doc.total = total
@@ -457,14 +465,17 @@ def uploads(
 @routerpull.post("/filesupload")
 async def filesupload(files: List[UploadFile]):
     """Upload multiple files."""
-    directory = "/opt/uploads/files"
+    settings = Settings()
+    directory = settings.general_upload_path
     prefix = datetime.now().strftime('%Y%m%d')
     try:
         uploaded_files = []
         for file in files:
-            filename = await save_uploaded_file(file, directory, prefix)
-            uploaded_files.append(filename)
-            await publishnewfile(filename)
+            filename, st = \
+                await save_uploaded_file(file, directory, prefix)
+            if st is not False:
+                uploaded_files.append(filename)
+                await publishnewfile(filename)
         return {'message': 'ok', 'uploaded_files': uploaded_files}
     # pylint: disable=unused-variable, broad-exception-caught
     except Exception as exc:  # noqa: F841

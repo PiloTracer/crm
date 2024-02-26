@@ -13,7 +13,7 @@ BIG_COLS = ["address", "cxname"]
 
 REGEXES = {
     "customeraccount": re.compile(r'^[a-z0-9]{3,20}$', re.IGNORECASE),
-    "amount": re.compile(r'^\d+\.\d+$', re.IGNORECASE),
+    "amount": re.compile(r'^\d+(\.\d+)?$', re.IGNORECASE),
     # Applying big field validation instead, following pattern will be ignored
     "cxname": re.compile(r'^[a-z\'\., -]+(?: [a-z\'\., -]+)*$', re.IGNORECASE),
     "routing": re.compile(r'^\d{5,20}$', re.IGNORECASE),

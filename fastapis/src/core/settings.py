@@ -12,6 +12,8 @@ class Settings():
     couchdb_password: str = os.getenv("COUCHDB_couchdb_password")
     couchdb_host: str = os.getenv("COUCHDB_couchdb_host")
     couchdb_database: str = os.getenv("COUCHDB_couchdb_database")
+    general_upload_path: str = os.getenv("GENERAL_file_upload_path")
+    general_log_path: str = os.getenv("GENERAL_file_log_path")
 
 
 class SettingsJWT():
@@ -38,7 +40,7 @@ class SettingsLog():
     couchdb_password: str = os.getenv("COUCHDBLOG_couchdb_password")
     couchdb_host: str = os.getenv("COUCHDBLOG_couchdb_host")
     couchdb_database: str = os.getenv("COUCHDBLOG_couchdb_database")
-    file_path: str = f"{os.getenv("COUCHDBLOG_file_path")}log_{
+    file_path: str = f"{os.getenv("COUCHDBLOG_file_path")}/log_{
         datetime.now().strftime('%Y%m%d')}.log"
 
 
@@ -49,7 +51,7 @@ class SettingsLogTrx():
     couchdb_password: str = os.getenv("COUCHDBLOGTRX_couchdb_password")
     couchdb_host: str = os.getenv("COUCHDBLOGTRX_couchdb_host")
     couchdb_database: str = os.getenv("COUCHDBLOGTRX_couchdb_database")
-    file_path: str = f"{os.getenv("COUCHDBLOGTRX_file_path")}logtrx_{
+    file_path: str = f"{os.getenv("COUCHDBLOGTRX_file_path")}/logtrx_{
         datetime.now().strftime('%Y%m%d')}.log"
 
 

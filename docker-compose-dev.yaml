@@ -2,6 +2,7 @@ version: '3.8'
 
 include:
   - docker-compose-pytap-dev.yaml
+  - docker-compose-sock-dev.yaml
   - docker-compose-rabbitmq.yaml
   - docker-compose-fastapi-dev.yaml
   - docker-compose-dashboard-dev.yaml

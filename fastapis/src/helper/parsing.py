@@ -136,25 +136,8 @@ unsafe_patterns = {
     # pylint: disable=line-too-long
     "xss": re.compile(r'''(<script[^>]*>([^<]*)</script>|javascript:[^ ]+)''', re.IGNORECASE),  # noqa: E501
     # pylint: disable=line-too-long
-    "command": re.compile(r'(\bbash\b|\bsh\b|\bcmd\b|\bpowershell\b|\bperl\b|\bphp\b|\.\./|[|&;]|[`"]|[\/])', re.IGNORECASE),  # noqa: E501
-    "sql": re.compile(r'''
-        [\']{1}                   # single quote character
-        [^'\\]*(?:                  # non-capture group of optional parts
-            FROM                  # literal "FROM" keyword
-            [^\s]+                 # one or more space-separated words
-            (?:                    # capture group for the conditions
-                ([wW]HERE)          # literal "WHERE" keyword or "WHERE"
-                | (\()              # open parenthesis
-                | [\s]{2}           # two whitespace characters
-                | (SELECT|DELETE|UPDATE|INSERT)  # one of the SQL keywords
-                [ \t]*             # optional whitespace
-                [a-zA-Z]+           # one or more alphabetical characters
-                [ =]+              # equal sign and optional spaces
-                [^\s']+            # one or more non-whitespace characters,
-                )
-                [\)]                   # close parenthesis if present
-        )*                       # end of capture group for conditions
-    ''', re.VERBOSE | re.IGNORECASE)
+    "command": re.compile(r'(\bbash\b|\bsh\b|\bcmd\b|\bpowershell\b|\bperl\b|\bphp\b|\.\./|[|&;]|[`"])', re.IGNORECASE),  # noqa: E501
+    "sql": re.compile(r"(?:\b(SELECT|INSERT|UPDATE|DELETE|EXECUTE|EXEC|DROP|ALTER|CREATE|SHOW TABLES|SHOW DATABASES)\b)", re.IGNORECASE),  # noqa: E501
 }
 
 

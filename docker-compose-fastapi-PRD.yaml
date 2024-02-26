@@ -14,8 +14,8 @@ services:
     environment:
       - TZ=America/Los_Angeles
     volumes:
-      - ./uploads/files:/opt/uploads/files
-      - ./uploads/log:/opt/uploads/log
+      - ./uploads/fast/files:/opt/uploads/fast/files
+      - ./uploads/fast/log:/opt/uploads/fast/log
     networks:
       web:
         ipv4_address: 10.5.0.6

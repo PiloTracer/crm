@@ -13,15 +13,13 @@ services:
     ports:
       - 8001:8000
       - 8889:8888
-      - 7789:6789
       - 5679:5678
       - 4000:80
     environment:
       - TZ=America/Los_Angeles
     volumes:
       - ./pytap/src:/code/pytap
-      - ./uploads/files:/opt/uploads/files
-      - ./uploads/log:/opt/uploads/log
+      - ./uploads/pytap/log:/opt/uploads/pytap/log
     #depends_on:
     #  - rabbitmq
     networks:
