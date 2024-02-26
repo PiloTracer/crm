@@ -7,6 +7,7 @@ include:
   - docker-compose-dashboard-PRD.yaml
   - docker-compose-api-PRD.yaml
   - docker-compose-couchdb.yaml
+  - docker-compose-redis.yaml
 
 networks:
   web:

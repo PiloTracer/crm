@@ -53,10 +53,14 @@ let data: Transaction[] = [];
 const BalancesTable = () => {
   const { needsUpdate, setNeedsUpdate } = useUpdateGridContext();
   const { data: session } = useSession();
-  const merchant: string = session?.user?.xmerchant;
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string | undefined>
   >({});
+
+  const merchant = useMemo(() => {
+    const res: string = session?.user ? session.user.xmerchant : "";
+    return res;
+  }, [session?.user]);
 
   const id = useMemo(() => {
     const res: string = session?.user ? session.user.xid : "";
@@ -75,8 +79,8 @@ const BalancesTable = () => {
 
   const req: Request = useMemo(() => {
     return {
-      username: session?.user.xid,
-      merchant: session?.user.xmerchant
+      username: id,
+      merchant: merchant
     };
   }, [session?.user]);
 

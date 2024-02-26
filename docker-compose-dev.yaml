@@ -7,6 +7,7 @@ include:
   - docker-compose-dashboard-dev.yaml
   - docker-compose-api-dev.yaml
   - docker-compose-couchdb.yaml
+  - docker-compose-redis.yaml
 
 networks:
   web:

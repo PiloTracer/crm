@@ -54,7 +54,7 @@ const PostRequestComponent: React.FC = () => {
 
     try {
       // Replace with your API endpoint
-      const url = 'http://localhost:8000/messages/user/createapi';
+      const url = '/api/fetch/fetchCreateApi';
 
       const header = {
         headers: {
@@ -70,6 +70,7 @@ const PostRequestComponent: React.FC = () => {
       };
 
       const result = await axios.post<ApiResponse>(url, data, header);
+      console.log(result);
       setResponse(result.data);
       setError(null);
     } catch (err: any) {

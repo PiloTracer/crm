@@ -6,12 +6,15 @@ from typing import List
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import APIRouter, Depends, HTTPException, status
 from couchdb import Server
+import redis
 from core.settings import SettingsJWT
 ##########################
 
-from dependencies.jwt import create_access_token, get_current_user, validate_user
+from dependencies.jwt import \
+    create_access_token, get_current_user, validate_user
 from dependencies.get_db import get_dbusr
-from controllers.save_message import save_message_user, get_message_login, validate_request
+from controllers.save_message import \
+    save_message_user, get_message_login, validate_request
 from helper.api import generate_api_key, generate_secret_word
 from helper.db_delete_docs import delete_docs_except_design_views
 from models.model import MessageGeneralSchema, MessageResponseSchema, \
@@ -58,7 +61,8 @@ async def create_user(
 
 
 @router.post("/user/token")
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+async def login_for_access_token(
+        form_data: OAuth2PasswordRequestForm = Depends()):
     '''JWT Login For Access Token'''
     settings = SettingsJWT()
     user: UserClass = validate_user(form_data.username, form_data.password)
@@ -209,3 +213,24 @@ async def delete_docs(db_name: str):
     if not success:
         raise HTTPException(status_code=404, detail=message)
     return {"message": message}
+
+
+redis_client = redis.Redis(host='10.5.0.4', port=6379, db=0)
+
+
+@router.get("/counter")
+def counter_next(countid: str) -> int:
+    '''Counter increment'''
+    # Increment and retrieve the counter value
+    counter_value = redis_client.incr(countid)
+    if counter_value > 1000000000:
+        redis_client.set(countid, 0)
+    return int(counter_value)
+
+
+@router.get("/counterleading0")
+def counter_next_leading_0(countid: str) -> str:
+    '''Counter increment with leading 0s'''
+    # Increment and retrieve the counter value
+    counter_value = counter_next(countid)
+    return str(counter_value).zfill(10)

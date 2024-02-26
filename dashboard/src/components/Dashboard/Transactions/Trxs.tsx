@@ -56,7 +56,6 @@ const Example: React.FC = () => {
   const [snackbarOpen, setSnackbarOpen] = useState<boolean>(false);
   const [snackbarMessage, setSnackbarMessage] = useState<string>('');
   const { data: session } = useSession();
-  const merchant: string = session?.user?.xmerchant;
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string | undefined>
   >({});
@@ -69,6 +68,11 @@ const Example: React.FC = () => {
   const handleCloseSnackbar = () => {
     setSnackbarOpen(false);
   };
+
+  const merchant = useMemo(() => {
+    const res: string = session?.user ? session.user.xmerchant : "";
+    return res;
+  }, [session?.user]);
 
   const id = useMemo(() => {
     // Your constant initialization logic
@@ -88,10 +92,10 @@ const Example: React.FC = () => {
 
   const req: Request = useMemo(() => {
     return {
-      username: session?.user.xid,
+      username: id,
       type: "row",
       method: "netcashach",
-      merchant: session?.user.xmerchant
+      merchant: merchant
     };
   }, [session?.user]);
 

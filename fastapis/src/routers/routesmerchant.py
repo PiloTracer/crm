@@ -55,7 +55,8 @@ async def processoractive(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f'There was an error quering merchant: {exc}') from exc
 
-    # return {'message': f'Successfuly uploaded {[file.filename for file in files]}'}
+    # return {'message': f'Successfuly
+    # uploaded {[file.filename for file in files]}'}
     return is_active
 
 
@@ -102,9 +103,11 @@ async def createprocessor(
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f'There was an error updating the transaction: {exc}') from exc
+            detail=f'There was an error updating \
+                the transaction: {exc}') from exc
 
-    # return {'message': f'Successfuly uploaded {[file.filename for file in files]}'}
+    # return {'message': f'Successfuly uploaded
+    # {[file.filename for file in files]}'}
     return {'message': 'ok', 'msg': detail}
 
 
@@ -133,7 +136,10 @@ async def createfee(
             fee.created = time.time()
             results = dbm.view('Merchant/vNewestFees',
                                startkey=[fee.merchant,
-                                         fee.processor, fee.ftype, fee.fname, True],
+                                         fee.processor,
+                                         fee.ftype,
+                                         fee.fname,
+                                         True],
                                endkey=[fee.merchant, fee.processor,
                                        fee.ftype, fee.fname, True])
 
@@ -159,9 +165,11 @@ async def createfee(
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f'There was an error updating the transaction: {exc}') from exc
+            detail=f'There was an error updating \
+                the transaction: {exc}') from exc
 
-    # return {'message': f'Successfuly uploaded {[file.filename for file in files]}'}
+    # return {'message': f'Successfuly uploaded
+    # {[file.filename for file in files]}'}
     return {'message': 'ok', 'msg': detail}
 
 
@@ -189,9 +197,11 @@ async def createupdate(
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f'There was an error updating the transaction: {exc}') from exc
+            detail=f'There was an error updating \
+                the transaction: {exc}') from exc
 
-    # return {'message': f'Successfuly uploaded {[file.filename for file in files]}'}
+    # return {'message': f'Successfuly uploaded
+    # {[file.filename for file in files]}'}
     return {'message': 'ok', 'msg': detail}
 
 
@@ -209,5 +219,6 @@ async def merchant_active(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f'There was an error quering merchant: {exc}') from exc
 
-    # return {'message': f'Successfuly uploaded {[file.filename for file in files]}'}
+    # return {'message': f'Successfuly uploaded
+    # {[file.filename for file in files]}'}
     return is_active

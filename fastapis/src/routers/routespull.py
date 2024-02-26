@@ -474,11 +474,14 @@ async def filesupload(files: List[UploadFile]):
 
 async def publishnewfile(filename):
     '''publishing a message to rabbitmq'''
-    vdate, vchecksum, merch = \
-        filename.split("_")  # pylint: disable=unused-variable # noqa: w0612
+
+    ele = filename.split("_")
+    vdate = ele[0]  # pylint: disable=unused-variable # noqa: F841
+    vchecksum = ele[1]  # pylint: disable=unused-variable # noqa: F841
+    merch = ele[2]  # pylint: disable=unused-variable # noqa: F841
     message: RabbitMessage = RabbitMessage()
     message.type = "upload"
-    message.channel = "rabbitbroker"
+    message.channel = "newfile"
     message.header = "newfile"
     message.message = filename
     message.merchant = merch
@@ -489,12 +492,12 @@ async def publishnewfile(filename):
     channel = connection.channel()
 
     # Declare a queue
-    channel.queue_declare(queue='rabbitbroker')
+    channel.queue_declare(queue='newfile')
 
     # Publish a message
     jsonstring = json.dumps(message.__dict__)
     channel.basic_publish(
-        exchange='', routing_key='rabbitbroker', body=jsonstring)
+        exchange='', routing_key='newfile', body=jsonstring)
 
     connection.close()
 

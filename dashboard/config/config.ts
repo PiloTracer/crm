@@ -8,6 +8,7 @@ export const config = {
   API_URL_BALANCE_CREATE: 'http://10.5.0.6:8000/balance/create',
   API_URL_TRANSACTION_UPDATE: 'http://10.5.0.6:8000/pull/updatetrx',
   API_URL_FILES_UPLOAD: 'http://10.5.0.6:8000/pull/filesupload',
+  API_URL_API_CREATE: 'http://10.5.0.6:8000/messages/user/createapi',
   API_URL_USERS: 'http://10.5.0.6:8000/messages/users',
   API_URL_USER_AUTH: 'http://10.5.0.6:8000/messages/user/token',
   API_URL_USERCREATE: 'http://10.5.0.6:8000/messages/user/signup',

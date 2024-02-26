@@ -1,7 +1,7 @@
 '''database manager'''
 from couchdb import Server
 from core.settings import Settings, Settings2, \
-    SettingsLog, SettingsMerchant, SettingsBalance
+    SettingsLog, SettingsLogTrx, SettingsMerchant, SettingsBalance
 
 
 def get_dbtrx():
@@ -49,8 +49,8 @@ def get_dblog():
 
 
 def get_dblogtrx():
-    '''get db for users'''
-    settings = SettingsLog()
+    '''get db for transaction logs'''
+    settings = SettingsLogTrx()
     couch = Server(url=settings.couchdb_host)
     couch.resource.credentials = (
         settings.couchdb_name, settings.couchdb_password)

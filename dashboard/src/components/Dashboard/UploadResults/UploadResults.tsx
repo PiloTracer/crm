@@ -18,14 +18,12 @@ import {
 import {
   QueryClient,
   QueryClientProvider,
-  useMutation,
   useQuery,
-  useQueryClient,
 } from '@tanstack/react-query';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { mkConfig, generateCsv, download } from 'export-to-csv'; //or use your library of choice here
 import axios from 'axios';
-import { Transaction, CreateTransactionFnc } from '@/components/DbFunctions/Balances'
+import { Transaction } from '@/components/DbFunctions/Balances'
 import { useSession } from 'next-auth/react';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -47,13 +45,17 @@ let data: Transaction[] = [];
 
 const UploadResultsTable = () => {
   const { data: session } = useSession();
-  const merchant: string = session?.user?.xmerchant;
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string | undefined>
   >({});
 
   const id = useMemo(() => {
     const res: string = session?.user ? session.user.xid : "";
+    return res;
+  }, [session?.user]);
+
+  const merchant = useMemo(() => {
+    const res: string = session?.user ? session.user.xmerchant : "";
     return res;
   }, [session?.user]);
 
@@ -69,8 +71,8 @@ const UploadResultsTable = () => {
 
   const req: Request = useMemo(() => {
     return {
-      username: session?.user.xid,
-      merchant: session?.user.xmerchant
+      username: id,
+      merchant: merchant
     };
   }, [session?.user]);
 
@@ -205,6 +207,7 @@ const UploadResultsTable = () => {
         </DialogActions>
       </>
     ),
+
     //optionally customize modal content
     renderEditRowDialogContent: ({ table, row, internalEditComponents }) => (
       <>
@@ -286,6 +289,10 @@ const UploadResultsTable = () => {
 
     ws.onopen = () => {
       console.log('Connected to WebSocket server');
+
+      // Send authentication token right after connection is established
+      const authToken = "somethingextrahere2024$$!!!!I6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ"; // Replace with your actual token
+      ws.send(JSON.stringify({ token: authToken }));
     };
 
     ws.onmessage = (event) => {
@@ -307,66 +314,10 @@ const UploadResultsTable = () => {
     return () => {
       ws.close();
     };
-  }, [refetch]); // Add refetch to the dependency array
+  }, [refetch, session, merchant]); // Add merchant to the dependency array
 
   return <MaterialReactTable table={table} />;
 };
-
-//CREATE hook (post new transaction to api)
-function useCreateTransaction(merchant: string, id: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (transaction: Transaction) => {
-      const request: any = {
-        status: {
-          status: "p",
-          detail: "Manual Balance adjustment"
-        }
-      }
-      console.log("about to call CreateTransactionFnc");
-      let res = await CreateTransactionFnc(request);
-      console.log(res);
-      return res;
-
-      //await new Promise((resolve) => setTimeout(resolve, 1000)); //fake api call
-      //return Promise.resolve();
-    },
-    //client side optimistic update
-    onMutate: (newTransactionInfo: Transaction) => {
-      // Store the previous transactions in case we need to roll back
-      const previousTransactions = queryClient.getQueryData<Transaction[]>(['transactions']);
-
-      // Optimistically update the transactions
-      queryClient.setQueryData(
-        ['transactions'],
-        (prevTransactions: Transaction[]) =>
-          [
-            ...prevTransactions,
-            {
-              ...newTransactionInfo,
-              id: (Math.random() + 1).toString(36).substring(7),
-            },
-          ] as Transaction[],
-      );
-
-      // Return the rollback function
-      return { rollback: () => queryClient.setQueryData(['transactions'], previousTransactions) };
-    },
-    onError: (error, variables, context) => context?.rollback(),
-    onSuccess: (data, variables, context) => {
-      queryClient.setQueryData(['transactions'], (old: Transaction[]) => {
-        return old.map((transaction) => {
-          if (transaction.value.amntsign === variables.value.amntsign) { //this used to be _id instead of amntsign
-            return data;
-          } else {
-            return transaction;
-          }
-        });
-      });
-    },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['transactions'] }), //refetch transactions after mutation, disabled for demo
-  });
-}
 
 const fetchDataFromApi = async (req: Request) => {
   const API_URL = '/api/fetch/fetchBalanceBalances';
@@ -401,28 +352,6 @@ function useGetTransactions(req: Request) { //instead of any used to be Request
   });
 }
 
-//UPDATE hook (put transaction in api) NO UPDATES FOR BALANCE TRANSACTIONS/ADJUSTMENTS
-function useUpdateTransaction(id: string, merchant: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (transaction: Transaction) => {
-      return null;
-    },
-    //client side optimistic update
-    onMutate: (newTransactionInfo: Transaction) => {
-      //console.log("did this stupid thing");
-      queryClient.setQueryData(
-        ['transactions'],
-        (prevTransactions: any) =>
-          prevTransactions?.map((prevTransaction: Transaction) =>
-            prevTransaction.value.amntsign === newTransactionInfo.value.amntsign ? newTransactionInfo : prevTransaction, // _id instead of amntsign
-          ),
-      );
-    },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['transactions'] }),
-  });
-}
-
 const queryClient = new QueryClient();
 
 const UploadResultsGrid = () => (
@@ -435,16 +364,3 @@ const UploadResultsGrid = () => (
 );
 
 export default UploadResultsGrid;
-
-const validateRequired = (value: string) => !!value.length;
-const validateEmail = (email: string) =>
-  !!email.length &&
-  email
-    .toLowerCase()
-    .match(
-      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
-    );
-
-function validateTransaction(transaction: Transaction) {
-  return {}; //no validations
-}

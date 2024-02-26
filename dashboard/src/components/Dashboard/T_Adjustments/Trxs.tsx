@@ -59,7 +59,6 @@ const Example: React.FC<UserProps> = ({ mactive }) => {
   const [snackbarOpen, setSnackbarOpen] = useState<boolean>(false);
   const [snackbarMessage, setSnackbarMessage] = useState<string>('');
   const { data: session } = useSession();
-  const merchant: string = session?.user?.xmerchant;
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string | undefined>
   >({});
@@ -71,6 +70,11 @@ const Example: React.FC<UserProps> = ({ mactive }) => {
   const handleCloseSnackbar = () => {
     setSnackbarOpen(false);
   };
+
+  const merchant = useMemo(() => {
+    const res: string = session?.user ? session.user.xmerchant : "";
+    return res;
+  }, [session?.user]);
 
   const merchopt: string[] = useMemo(() => {
     const res: string[] = session?.user && session.user.role === "owner" ? ["latcorp", "cliente", "*"] : [merchant];
@@ -99,8 +103,8 @@ const Example: React.FC<UserProps> = ({ mactive }) => {
 
   const req: Request = useMemo(() => {
     return {
-      username: session?.user.xid,
-      merchant: session?.user.xmerchant
+      username: id,
+      merchant: merchant
     };
   }, [session?.user]);
 

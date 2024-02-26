@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7.2.4-alpine
+    container_name: redis_c
+    ports:
+      - "6379:6379"
+    hostname: srv.redis
+    volumes:
+      - ./redis_data:/code/redis/data
+    networks:
+      web:
+        ipv4_address: 10.5.0.4
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: always
+
+networks:
+  web:
+    name: simple_web
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 10.5.0.0/16
+         gateway: 10.5.0.1
