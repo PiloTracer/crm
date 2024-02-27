@@ -502,8 +502,7 @@ async def publishnewfile(filename):
     message.merchant = merch
 
     credentials = pika.PlainCredentials('rabbitmq', 'rabbitmq')
-    connection = pika.BlockingConnection(
-        pika.ConnectionParameters('10.5.0.20', 5672, '/', credentials))
+    connection = pika.BlockingConnection(pika.ConnectionParameters('10.5.0.20', 5672, '/', credentials))  # noqa: E501
     channel = connection.channel()
 
     # Declare a queue
