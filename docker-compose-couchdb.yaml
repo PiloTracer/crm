@@ -13,10 +13,12 @@ services:
     environment:
       - COUCHDB_USER=dashboard
       - COUCHDB_PASSWORD=Jimena1000
+      #- COUCHDB_URL=http://localhost:6984
+      #- COUCHDB_DB=sinpe
       - TZ=America/Los_Angeles
     volumes:
-      - ./couchdb/dbdata:/crmdir/couchdb/data
-      #- ./couchdb/config:/crmdir/couchdb/etc/local.d
+      - ./couchdb/dbdata:/opt/couchdb/data
+      - ./couchdb/config:/opt/couchdb/etc/local.d
     networks:
       web:
         ipv4_address: 10.5.0.5
