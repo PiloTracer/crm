@@ -6,7 +6,7 @@ import aiofiles
 from fastapi import UploadFile
 from dependencies.get_db import get_dblogtrx
 from models.modelhelper import LogTrxModel
-from routers.routes import counter_next, counter_next_leading_0
+from routers.routes import counter_next_leading_0
 
 
 async def write_file_in_chunks(file_path, contents, chunk_size=1024*1024):
