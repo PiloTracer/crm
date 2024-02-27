@@ -9,6 +9,7 @@ bin/PRD/*
 bin/dev/*
 tmp_*
 rabbitmq/data/*
+docker.ini
 
 # User-specific files
 *.rsuser
