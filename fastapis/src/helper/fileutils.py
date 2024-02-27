@@ -46,24 +46,22 @@ async def save_uploaded_file(file: UploadFile, directory: str, prefix: str) \
         return None, False
     finally:
         await file.close()
-        o_log = LogTrxModel()
-        # o_log.id = counter_next_leading_0("upload")
-        o_log.id = \
-            f'{int(o_log.createds*1000)}_{counter_next_leading_0("upload")}'
-        o_log.merchant = felements[0]
-        o_log.created_merchant = None
-        o_log.created_by = None
-        o_log.message = get_original_file_name(filename).lower()
-        o_log.partdate = int(prefix)
-        o_log.doc_id = hash256
-        o_log.parent = hash256
-        o_log.status = status
-        o_log.src = "File"
-        o_log.extra = None
-        db_logtrx = get_dblogtrx()
-        doc: Dict = o_log.to_dict()
-        # pylint: disable=unused-variable:
-        doc_id, doc_rev = db_logtrx.save(doc)  # noqa: W0612
+        # o_log = LogTrxModel()
+        # o_log.id = \
+        #    f'{int(o_log.createds*1000)}_{counter_next_leading_0("upload")}'
+        # o_log.merchant = felements[0]
+        # o_log.created_merchant = None
+        # o_log.created_by = None
+        # o_log.message = get_original_file_name(filename).lower()
+        # o_log.partdate = int(prefix)
+        # o_log.doc_id = hash256
+        # o_log.parent = hash256
+        # o_log.status = status
+        # o_log.src = "File"
+        # o_log.extra = None
+        # db_logtrx = get_dblogtrx()
+        # doc: Dict = o_log.to_dict()
+        # doc_id, doc_rev = db_logtrx.save(doc)  # noqa: W0612
 
 
 def get_original_file_name(input_string: str) -> str:
