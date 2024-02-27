@@ -11,4 +11,3 @@ sudo chmod 777 /opt/uploads/sock/log
 
 sudo chmod +x binsh/PRD/*
 
-#sudo chmod +x dirs.sh
