@@ -12,14 +12,14 @@ from routers.routes import counter_next, counter_next_leading_0
 async def write_file_in_chunks(file_path, contents, chunk_size=1024*1024):
     '''save a file in chunks'''
     status = False
-    try:
-        async with aiofiles.open(file_path, 'wb') as f:
-            for i in range(0, len(contents), chunk_size):
-                await f.write(contents[i:i + chunk_size])
-            status = True
-    except Exception as e:  # pylint: disable=broad-exception-caught
-        print(f"An error occurred: {e}")
-        status = False
+    # try:
+    async with aiofiles.open(file_path, 'wb') as f:
+        for i in range(0, len(contents), chunk_size):
+            await f.write(contents[i:i + chunk_size])
+        status = True
+    # except Exception as e:  # pylint: disable=broad-exception-caught
+    #    print(f"An error occurred: {e}")
+    #    status = False
 
     return status
 
@@ -29,22 +29,19 @@ async def save_uploaded_file(file: UploadFile, directory: str, prefix: str) \
     """Save the uploaded file to the specified directory."""
     status = False
     felements = List[str]
-    try:
-        contents = await file.read()
-        hash256 = hashlib.md5(contents).hexdigest()
-        filename = f'{prefix}_{hash256}_{file.filename}'
-        felements = file.filename.split("_")
-        file_path = f'{directory}/{filename}'
-        status = await write_file_in_chunks(file_path, contents)
+    #try:
+    contents = await file.read()
+    hash256 = hashlib.md5(contents).hexdigest()
+    filename = f'{prefix}_{hash256}_{file.filename}'
+    felements = file.filename.split("_")
+    file_path = f'{directory}/{filename}'
+    status = await write_file_in_chunks(file_path, contents)
 
-        # async with aiofiles.open(file_path, 'wb') as f:
-        #    await f.write(contents)
-        #    status = True
-        return filename, status
+    return filename, status
     # pylint: disable=broad-exception-caught
-    except Exception as exc:  # noqa: F841 #pylint: disable=unused-variable
-        return None, False
-    finally:
+    #except Exception as exc:  # noqa: F841 #pylint: disable=unused-variable
+    return None, False
+    #finally:
         await file.close()
         # o_log = LogTrxModel()
         # o_log.id = \
