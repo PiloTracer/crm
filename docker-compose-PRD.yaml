@@ -3,7 +3,7 @@ version: '3.8'
 include:
   - docker-compose-pytap-PRD.yaml
   - docker-compose-sock-PRD.yaml
-  - docker-compose-rabbitmq.yaml
+  #- docker-compose-rabbitmq.yaml
   - docker-compose-fastapi-PRD.yaml
   - docker-compose-dashboard-PRD.yaml
   - docker-compose-api-PRD.yaml

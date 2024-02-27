@@ -12,7 +12,6 @@ sudo docker compose -f docker-compose-redis.yaml down
 
 sudo docker compose -f docker-compose-pytap-PRD.yaml up --build -d --force-recreate
 sudo docker compose -f docker-compose-sock-PRD.yaml up --build -d --force-recreate
-sudo docker compose -f docker-compose-rabbitmq.yaml up --build -d --force-recreate
 sudo docker compose -f docker-compose-fastapi-PRD.yaml up --build -d --force-recreate
 sudo docker compose -f docker-compose-dashboard-PRD.yaml up --build -d --force-recreate
 sudo docker compose -f docker-compose-api-PRD.yaml up --build -d --force-recreate
