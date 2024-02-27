@@ -10,6 +10,7 @@ bin/dev/*
 tmp_*
 rabbitmq/data/*
 docker.ini
+*.zip
 
 # User-specific files
 *.rsuser
