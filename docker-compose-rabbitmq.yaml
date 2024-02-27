@@ -2,11 +2,12 @@ version: '3.8'
 
 services:
   rabbitmq:
-    image: rabbitmq:3.13.0-rc.4-management
+    image: rabbitmq:latest
     container_name: 'rabbitmq'
     ports:
-      - 3672:5672
-      - 2672:15672
+      - 5672:5672
+      - 15672:15672
+    hostname: srv.rabbitmq
     environment:
       RABBITMQ_ERLANG_COOKIE: "SWQOKODSQALRPCLNMEQG"
       RABBITMQ_DEFAULT_USER: "rabbitmq"
@@ -15,9 +16,31 @@ services:
     volumes:
       - ./rabbitmq/data:/var/lib/rabbitmq
       - ./rabbitmq/log:/var/log/rabbitmq
+    # - ./rabbitmq/conf:/etc/rabbitmq/rabbitmq.conf
+    #  - rabbit_mqdata:/usr/share/rabbitmq/data
+    labels:
+      NAME: "rabbitmq1"
     healthcheck:
       test: ["CMD", "rabbitmqctl", "status"]
       interval: 30s
       timeout: 10s
       retries: 5
     restart: always
+    networks:
+      web:
+        ipv4_address: 10.5.0.20
+
+#volumes:
+#  rabbitmq_data:
+#    driver: local
+#  rabbitmq_log:
+#    driver: local
+
+networks:
+  web:
+    name: simple_web
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 10.5.0.0/16
+         gateway: 10.5.0.1
