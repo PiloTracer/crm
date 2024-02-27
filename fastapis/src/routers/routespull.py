@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, UploadFile, HTTPException, status
 from couchdb import Server
 import pandas
 import pika
+import traceback
 from dependencies.get_db import \
     get_dbbalance, get_dbtrx, get_dblog, get_dbmerchant, get_dbusr
 from core.settings import Settings
@@ -479,8 +480,11 @@ async def filesupload(files: List[UploadFile]):
         return {'message': 'ok', 'uploaded_files': uploaded_files}
     # pylint: disable=unused-variable, broad-exception-caught
     except Exception as exc:  # noqa: F841
+        exc_type = type(exc).__name__
+        exc_traceback = traceback.format_exc()
+
         return {'message': 'nok',
-                'msg': f"Error uploading the file(s): Exception:: {exc} :: file:: {file.filename} :: directory:: {directory} :: prefix:: {prefix}"}  # noqa: E501
+                'msg': f"Error uploading the file(s): Type:: {exc_type} :: Exception:: {exc} :: Traceback:: {exc_traceback} :: file:: {file.filename} :: directory:: {directory} :: prefix:: {prefix}"}  # noqa: E501
 
 
 async def publishnewfile(filename):
