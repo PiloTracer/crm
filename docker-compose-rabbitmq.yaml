@@ -16,7 +16,7 @@ services:
     volumes:
       - ./rabbitmq/data:/var/lib/rabbitmq
       - ./rabbitmq/log:/var/log/rabbitmq
-      - ./rabbitmq/conf:/etc/rabbitmq/rabbitmq.conf
+    # - ./rabbitmq/conf:/etc/rabbitmq/rabbitmq.conf
     #  - rabbit_mqdata:/usr/share/rabbitmq/data
     labels:
       NAME: "rabbitmq1"
