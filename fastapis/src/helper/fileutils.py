@@ -36,7 +36,7 @@ async def save_uploaded_file(file: UploadFile, directory: str, prefix: str) \
     felements = file.filename.split("_")
     file_path = f'{directory}/{filename}'
     status = await write_file_in_chunks(file_path, contents)
-    await file.close
+    await file.close()
     return filename, status
     # pylint: disable=broad-exception-caught
     # except Exception as exc:  # noqa: F841 #pylint: disable=unused-variable
