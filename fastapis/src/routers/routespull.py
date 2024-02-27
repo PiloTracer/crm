@@ -10,6 +10,8 @@ from couchdb import Server
 import pandas
 import pika
 import traceback
+
+import redis
 from dependencies.get_db import \
     get_dbbalance, get_dbtrx, get_dblog, get_dbmerchant, get_dbusr
 from core.settings import Settings
@@ -514,6 +516,13 @@ async def publishnewfile(filename):
         exchange='', routing_key='newfile', body=jsonstring)
 
     connection.close()
+
+
+def publish_message(redis_host, redis_port, channel, message):
+    '''Publishing upload to redis'''
+    redis_client = redis.StrictRedis(
+        host=redis_host, port=redis_port, decode_responses=True)
+    redis_client.publish(channel, message)
 
 
 @routerpull.post("/transactions")
