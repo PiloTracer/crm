@@ -43,7 +43,7 @@ COPY . .
 #COPY ./.env .
 
 # Make your program executable
-RUN chmod +x listener.py
+#RUN chmod +x listener.py
 
 # Inform Docker that the container is listening on the specified port at runtime.
 EXPOSE 80
