@@ -8,7 +8,7 @@ def main():
     # Connection parameters
     credentials = pika.PlainCredentials('rabbitmq', 'rabbitmq')
     connection_params = pika.ConnectionParameters(
-        '10.5.0.20', 5672, '/', credentials)
+        '10.5.0.8', 5672, '/', credentials)
     connection = pika.BlockingConnection(connection_params)
     channel = connection.channel()
 

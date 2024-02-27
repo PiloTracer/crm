@@ -28,7 +28,7 @@ services:
     restart: always
     networks:
       web:
-        ipv4_address: 10.5.0.20
+        ipv4_address: 10.5.0.8
 
 #volumes:
 #  rabbitmq_data:

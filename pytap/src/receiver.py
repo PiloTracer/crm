@@ -70,7 +70,7 @@ class RabbitMQConsumer:
     def run(self):
         credentials = pika.PlainCredentials('rabbitmq', 'rabbitmq')
         parameters = pika.ConnectionParameters(
-            '10.5.0.20', 5672, '/', credentials, heartbeat=60, blocked_connection_timeout=30
+            '10.5.0.8', 5672, '/', credentials, heartbeat=60, blocked_connection_timeout=30
         )
         self.connection = pika.SelectConnection(
             parameters, on_open_callback=self.on_connected,
