@@ -35,7 +35,7 @@ ENV TZ=America/Los_Angeles
 COPY --from=builder /wheels /wheels
 COPY --from=builder /code/pytap/requirements.txt .
 
-RUN mkdir /opt/uploads/pytap/log  && chmod 777 /opt/uploads/pytap/log
+RUN sudo mkdir /opt/uploads && sudo mkdir /opt/uploads/fast && sudo mkdir /opt/uploads/fast/log && sudo chmod 777 /opt/uploads/fast/log
 
 # Install the dependencies
 RUN pip install --no-cache /wheels/*

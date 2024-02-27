@@ -38,8 +38,8 @@ RUN pip install --no-cache /wheels/*
 COPY . .
 COPY ./.env .
 
-RUN mkdir /opt/uploads/fast/files && chmod 777 /opt/uploads/fast/files
-RUN mkdir /opt/uploads/fast/log  && chmod 777 /opt/uploads/fast/log
+RUN sudo mkdir /opt/uploads && sudo mkdir /opt/uploads/fast && sudo mkdir /opt/uploads/fast/files && sudo chmod 777 /opt/uploads/fast/files
+RUN sudo mkdir /opt/uploads && sudo mkdir /opt/uploads/fast && sudo mkdir /opt/uploads/fast/log && sudo chmod 777 /opt/uploads/fast/log
 
 # Expose the port the app runs on
 EXPOSE 8000
