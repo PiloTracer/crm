@@ -35,7 +35,7 @@ ENV TZ=America/Los_Angeles
 COPY --from=builder /wheels /wheels
 COPY --from=builder /code/sock/requirements.txt .
 
-RUN mkdir -p /opt/uploads/sock/log && chmod 777 /opt/uploads/sock/log
+RUN mkdir -p /crmdir/uploads/sock/log && chmod 777 /crmdir/uploads/sock/log
 
 # Install the dependencies
 RUN pip install --no-cache /wheels/*

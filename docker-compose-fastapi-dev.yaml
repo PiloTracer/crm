@@ -18,8 +18,8 @@ services:
       - TZ=America/Los_Angeles
     volumes:
       - ./fastapis/src:/code/fastapis
-      - ./uploads/fast/files:/opt/uploads/fast/files
-      - ./uploads/fast/log:/opt/uploads/fast/log
+      - ./uploads/fast/files:/crmdir/uploads/fast/files
+      - ./uploads/fast/log:/crmdir/uploads/fast/log
     #depends_on:
     #  - couchserver
     networks:

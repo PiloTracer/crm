@@ -16,7 +16,7 @@ services:
       - TZ=America/Los_Angeles
     volumes:
       - ./sock/src:/code/sock
-      - ./uploads/sock/log:/opt/uploads/sock/log
+      - ./uploads/sock/log:/crmdir/uploads/sock/log
     networks:
       web:
         ipv4_address: 10.5.0.7
