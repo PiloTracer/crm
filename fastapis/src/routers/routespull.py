@@ -476,7 +476,7 @@ async def filesupload(files: List[UploadFile]):
                 await save_uploaded_file(file, directory, prefix)
             if st is not False:
                 uploaded_files.append(filename)
-                # await publishnewfile(filename)
+                await publishnewfile(filename)
         return {'message': 'ok', 'uploaded_files': uploaded_files}
     # pylint: disable=unused-variable, broad-exception-caught
     except Exception as exc:  # noqa: F841
@@ -503,7 +503,7 @@ async def publishnewfile(filename):
 
     credentials = pika.PlainCredentials('rabbitmq', 'rabbitmq')
     connection = pika.BlockingConnection(
-        pika.ConnectionParameters('srv.rabbitmq', 5672, '/', credentials))
+        pika.ConnectionParameters('10.5.0.20', 5672, '/', credentials))
     channel = connection.channel()
 
     # Declare a queue
