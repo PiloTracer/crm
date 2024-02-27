@@ -503,19 +503,18 @@ async def publishnewfile(filename):
     message.message = filename
     message.merchant = merch
 
-    credentials = pika.PlainCredentials('rabbitmq', 'rabbitmq')
-    connection = pika.BlockingConnection(pika.ConnectionParameters('10.5.0.8', 5672, '/', credentials))  # noqa: E501
-    channel = connection.channel()
-
-    # Declare a queue
-    channel.queue_declare(queue='newfile')
-
-    # Publish a message
     jsonstring = json.dumps(message.__dict__)
-    channel.basic_publish(
-        exchange='', routing_key='newfile', body=jsonstring)
 
-    connection.close()
+    publish_message('10.5.0.4', 6379, message.channel, jsonstring)
+
+    # credentials = pika.PlainCredentials('rabbitmq', 'rabbitmq')
+    # connection = pika.BlockingConnection(pika.ConnectionParameters('10.5.0.8', 5672, '/', credentials))  # noqa: E501
+    # channel = connection.channel()
+    # channel.queue_declare(queue='newfile')
+    # jsonstring = json.dumps(message.__dict__)
+    # channel.basic_publish(
+    #    exchange='', routing_key='newfile', body=jsonstring)
+    # connection.close()
 
 
 def publish_message(redis_host, redis_port, channel, message):

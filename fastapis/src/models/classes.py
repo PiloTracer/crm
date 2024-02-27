@@ -19,7 +19,8 @@ class RabbitMessage(BaseModel):
             'type': self.type,
             'channel': self.channel,
             'header': self.header,
-            'message': self.message
+            'message': self.message,
+            'merchant': self.merchant
         }
 
     # def to_str(self):

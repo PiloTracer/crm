@@ -52,4 +52,4 @@ EXPOSE 80
 EXPOSE 6789
 
 # Run receiver.py when the container launches
-ENTRYPOINT ["python3", "receiver.py"]
+ENTRYPOINT ["python3", "subscriber.py"]
