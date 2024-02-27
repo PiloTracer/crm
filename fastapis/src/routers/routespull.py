@@ -480,7 +480,7 @@ async def filesupload(files: List[UploadFile]):
     # pylint: disable=unused-variable, broad-exception-caught
     except Exception as exc:  # noqa: F841
         return {'message': 'nok',
-                'msg': "There was an error uploading the file(s)"}
+                'msg': f"Error uploading the file(s): {exc}"}
 
 
 async def publishnewfile(filename):
