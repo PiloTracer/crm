@@ -36,7 +36,7 @@ COPY --from=builder /wheels /wheels
 COPY --from=builder /code/pytap/requirements.txt .
 
 
-RUN chmod 777 ~/crm/uploads/pytap/log
+RUN chmod 777 /crmdir/uploads/pytap/log
 
 # Install the dependencies
 RUN pip install --no-cache /wheels/*
