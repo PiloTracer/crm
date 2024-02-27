@@ -35,7 +35,10 @@ ENV TZ=America/Los_Angeles
 COPY --from=builder /wheels /wheels
 COPY --from=builder /code/sock/requirements.txt .
 
-RUN sudo mkdir -p /opt/uploads && sudo mkdir -p /opt/uploads/fast && sudo mkdir -p /opt/uploads/fast/log && sudo chmod 777 /opt/uploads/fast/log
+RUN mkdir -p /opt/uploads
+RUN mkdir -p /opt/uploads/fast
+RUN mkdir -p /opt/uploads/fast/log
+RUN chmod 777 /opt/uploads/fast/log
 
 # Install the dependencies
 RUN pip install --no-cache /wheels/*
