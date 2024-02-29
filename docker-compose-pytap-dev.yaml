@@ -11,9 +11,6 @@ services:
     restart: always
     hostname: srv.pytap
     ports:
-      - 8001:8000
-      - 8889:8888
-      - 5679:5678
       - 4000:80
     environment:
       - TZ=America/Los_Angeles

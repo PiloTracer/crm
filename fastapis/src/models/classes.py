@@ -12,6 +12,7 @@ class RabbitMessage(BaseModel):
     header: str = None
     message: str = None
     merchant: str = None
+    wstoken: str = None
 
     def to_dict(self):
         """convert to dict"""

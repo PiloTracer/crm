@@ -5,11 +5,17 @@
 
 # Readme files:
 readme*.*
-bin/PRD/*
-bin/dev/*
+bin/PRD/
+bin/dev/
 tmp_*
 rabbitmq/data/*
 docker.ini
+custom.ini
+couchdb/
+rabbitmq/
+rabbitmq.conf/
+redis_data/
+docker-conf/
 *.zip
 
 # User-specific files

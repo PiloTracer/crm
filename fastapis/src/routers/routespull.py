@@ -4,16 +4,16 @@ import time
 import json
 import pathlib
 from typing import List
+import traceback
 import aiofiles
 from fastapi import APIRouter, Depends, UploadFile, HTTPException, status
 from couchdb import Server
 import pandas
-import pika
-import traceback
 
 import redis
 from dependencies.get_db import \
-    get_dbbalance, get_dbtrx, get_dblog, get_dbmerchant, get_dbusr
+    get_dbbalance, get_dblogtrx, get_dbtrx, \
+    get_dblog, get_dbmerchant, get_dbusr
 from core.settings import Settings
 from helper.balance import create_balance_trx
 from helper.fileutils import save_uploaded_file
@@ -24,6 +24,7 @@ from models.model import MessageSchema, MessageSchemaRef, TrxRowEcheckId, \
     TrxUpdateSchema, TrxHeadEcheck, TrxRowEcheck, MerchRequestSchema, \
     MerchRequestSimpleSchema, UserApiEmailSchema, UserApiTrxSchema
 from models.modelbalance import BalanceModel
+from models.modelhelper import LogTrxModel
 from models.modelmerch import MerchFeeModel, MerchModel, MerchProcessorModel
 
 # from auth.auth_handler import *
@@ -299,6 +300,7 @@ def uploads(
     settings = Settings()
     directory = settings.general_upload_path
     validation_results = {"status": "nok"}
+    merch = ""  # let's make merch variable global
 
     file_list = []
     inserted_document_ids = []
@@ -462,6 +464,15 @@ def uploads(
                     return detail
 
                 # transactions += rows
+    message: RabbitMessage = RabbitMessage()
+    message.type = "upload"
+    message.channel = "newfile"
+    message.header = "uploadresult"
+    message.message = filename
+    message.merchant = merch
+    message.wstoken = "somethingextrahereI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ"  # noqa: E501
+    jsonstring = json.dumps(message.__dict__)
+    publish_message('10.5.0.4', 6379, message.channel, jsonstring)
     return inserted_document_ids
 
 
@@ -519,6 +530,13 @@ async def publishnewfile(filename):
 
 def publish_message(redis_host, redis_port, channel, message):
     '''Publishing upload to redis'''
+    redis_client = redis.StrictRedis(
+        host=redis_host, port=redis_port, decode_responses=True)
+    redis_client.publish(channel, message)
+
+
+def publish_message_sock(redis_host, redis_port, channel, message):
+    '''Publishing file parse to redis sockets'''
     redis_client = redis.StrictRedis(
         host=redis_host, port=redis_port, decode_responses=True)
     redis_client.publish(channel, message)
@@ -624,3 +642,22 @@ def adjustments(
             detail='There was an error connecting to the db') from exc
 
     return queried_documents
+
+
+@routerpull.post("/latestuploads", response_model=List[LogTrxModel])
+def get_latest_uploads(
+    mrequest: MerchRequestSimpleSchema,
+    dblogtrx: Server = Depends(get_dblogtrx)
+) -> List[LogTrxModel]:
+    '''Get the latest file parse results'''
+
+    # http://localhost:6984/w_log_trx/_design/logtrx/_view/lastuploads?startkey=["cliente",{}]&endkey=["cliente"]&include_docs=true&descending=true
+    results = dblogtrx.view('logtrx/lastuploads',
+                            startkey=[mrequest.merchant, {}],
+                            endkey=[mrequest.merchant],
+                            descending=True,
+                            include_docs=True)
+
+    documents = [row.doc for row in results.rows]
+
+    return documents

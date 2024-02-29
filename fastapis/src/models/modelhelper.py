@@ -8,8 +8,10 @@ from pydantic import BaseModel, Field
 class LogTrxModel(BaseModel):
     """Class representing a class of ransaction Log entry"""
     id: str = Field(None, alias='_id')
-    created: Optional[int] = int(datetime.now().strftime('%Y%m%d%H%M%S'))
-    createds: Optional[float] = time.time()
+    created: int = \
+        Field(default_factory=lambda: int(
+            datetime.now().strftime('%Y%m%d%H%M%S')))
+    createds: float = Field(default_factory=time.time)
     merchant: Optional[str] = None
     created_merchant: Optional[str] = None
     created_by: Optional[str] = None

@@ -3,6 +3,7 @@ export const config = {
   API_URL_MERCHANT_ACTIVE: 'http://10.5.0.6:8000/merchant/merchantactive',
   API_URL_BALANCE_ADJUSTMENTS: 'http://10.5.0.6:8000/pull/adjustments',
   API_URL_BALANCE_BALANCES: 'http://10.5.0.6:8000/balance/balances',
+  API_URL_UPLOAD_LOGS: 'http://10.5.0.6:8000/pull/latestuploads',
   API_URL_BALANCE_REVERSE: 'http://10.5.0.6:8000/balance/reverse',
   API_URL_TRANSACTIONS: 'http://10.5.0.6:8000/pull/transactions',
   API_URL_BALANCE_CREATE: 'http://10.5.0.6:8000/balance/create',
@@ -16,6 +17,6 @@ export const config = {
   API_URL_USERACTDEACT: 'http://10.5.0.6:8000/messages/user/activate_deactivate',
   API_URL_MERCHANTS_ACTIVE: 'http://10.5.0.6:8000/merchant/listactive',
   API_URL_RABBIT_UPLOAD: 'http://10.5.0.8:5672',
-  API_URL_WEBSOCKETS: 'ws://localhost:7789',
-  API_URL_WEBSOCKETS_INTERNAL: 'ws://10.5.0.2:6789',
+  API_URL_WEBSOCKETS: 'ws://localhost:4500/ws',
+  API_URL_WEBSOCKETS_INTERNAL: 'ws://10.5.0.7:4500/ws',
 };

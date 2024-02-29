@@ -16,9 +16,9 @@ COPY . .
 
 #RUN chmod +x broadcaster.py
 
-EXPOSE 6789
+EXPOSE 4500
 
 #ENV PYTHONUNBUFFERED=1
 
-ENTRYPOINT ["python3", "broadcaster.py"]
+ENTRYPOINT ["python3", "sock.py"]
 

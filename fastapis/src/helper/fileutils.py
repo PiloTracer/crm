@@ -44,7 +44,7 @@ async def save_uploaded_file(file: UploadFile, directory: str, prefix: str) \
         await file.close()
         o_log = LogTrxModel()
         o_log.id = \
-            f'{int(o_log.createds*1000)}_{counter_next_leading_0("upload")}'
+            f'{int(o_log.createds*1000)}_{counter_next_leading_0("uploadredis")}'
         o_log.merchant = felements[0]
         o_log.created_merchant = None
         o_log.created_by = None

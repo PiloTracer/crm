@@ -23,7 +23,7 @@ import {
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { mkConfig, generateCsv, download } from 'export-to-csv'; //or use your library of choice here
 import axios from 'axios';
-import { Transaction } from '@/components/DbFunctions/Balances'
+import { UploadLogs } from '@/components/DbFunctions/UploadLogs'
 import { useSession } from 'next-auth/react';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -38,24 +38,26 @@ const csvConfig = mkConfig({
 
 type Request = {
   username: string,
-  merchant: string
+  merchant: string,
+  context: string
 }
 
-let data: Transaction[] = [];
-
-const UploadResultsTable = () => {
+const UploadResultsTable: React.FC = () => {
+  const [snackbarOpen, setSnackbarOpen] = useState<boolean>(false);
+  const [snackbarMessage, setSnackbarMessage] = useState<string>('');
   const { data: session } = useSession();
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string | undefined>
   >({});
 
-  const id = useMemo(() => {
-    const res: string = session?.user ? session.user.xid : "";
+  const merchant = useMemo(() => {
+    const res: string = session?.user ? session.user.xmerchant : "";
     return res;
   }, [session?.user]);
 
-  const merchant = useMemo(() => {
-    const res: string = session?.user ? session.user.xmerchant : "";
+  const id = useMemo(() => {
+    // Your constant initialization logic
+    const res: string = session?.user ? session.user.xid : "";
     return res;
   }, [session?.user]);
 
@@ -72,13 +74,14 @@ const UploadResultsTable = () => {
   const req: Request = useMemo(() => {
     return {
       username: id,
-      merchant: merchant
+      merchant: merchant,
+      context: "uploadresults"
     };
   }, [session?.user]);
 
   const { refetch } = useGetTransactions(req); // Make sure this is the correct hook from your implementation
 
-  const handleExportRows = (rows: MRT_Row<Transaction>[]) => {
+  const handleExportRows = (rows: MRT_Row<UploadLogs>[]) => {
     const rowData = rows.map((row) => row.original);
     const csv = generateCsv(csvConfig)(rowData);
     download(csvConfig)(csv);
@@ -90,29 +93,48 @@ const UploadResultsTable = () => {
     download(csvConfig)(csv);
   };
 
-  const columns = useMemo<MRT_ColumnDef<Transaction>[]>(
+  const columns = useMemo<MRT_ColumnDef<UploadLogs>[]>(
     () => [
       {
-        accessorKey: "key",
-        header: "Merchant",
+        accessorFn: (originalRow) => new Date(originalRow.createds * 1000), //convert to date for sorting and filtering
+        accessorKey: 'createds',
+        header: 'Date',
+        enableEditing: false,
+        filterVariant: 'datetime-range',
+        Cell: ({ cell }) =>
+          `${cell.getValue<Date>().toLocaleDateString()} ${cell
+            .getValue<Date>()
+            .toLocaleTimeString()}`, // convert back to string for display
+        Edit: () => null
+      },
+      {
+        accessorKey: "_id",
+        header: "Id",
         enableEditing: false,
         Edit: () => null
       },
       {
-        accessorKey: "value.amntsign",
-        header: "Amount",
+        accessorKey: "message",
+        header: "File",
         enableEditing: false,
         Edit: () => null
       },
       {
-        accessorKey: "value.feesign",
-        header: "Fees",
+        accessorKey: "status",
+        header: "Status",
+        enableEditing: false,
+        Cell: ({ cell }) => cell.getValue() ? 'Success' : 'Failed',
+        Edit: () => null
+      },
+      {
+        accessorKey: "src",
+        header: "Src",
         enableEditing: false,
         Edit: () => null
       },
       {
-        accessorKey: "value.totsign",
-        header: "Total",
+        accessorKey: "extra",
+        header: "Extra",
         enableEditing: false,
         Edit: () => null
       }
@@ -135,7 +157,7 @@ const UploadResultsTable = () => {
     enableColumnPinning: false,
     enableColumnActions: false,
     initialState: {
-      density: 'compact', columnVisibility: { channel: false },
+      density: 'compact', columnVisibility: { doc_id: false },
       columnPinning: {
         left: ['mrt-row-expand', 'mrt-row-select'],
         right: ['mrt-row-actions'],
@@ -283,44 +305,55 @@ const UploadResultsTable = () => {
     },
   });
 
-  // WebSocket setup
   useEffect(() => {
-    const ws = new WebSocket(config.API_URL_WEBSOCKETS);
+    let ws: WebSocket | null = null;
 
-    ws.onopen = () => {
-      console.log('Connected to WebSocket server');
+    const connectWebSocket = (): void => {
+      ws = new WebSocket(config.API_URL_WEBSOCKETS);
 
-      // Send authentication token right after connection is established
-      const authToken = "somethingextrahere2024$$!!!!I6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ"; // Replace with your actual token
-      ws.send(JSON.stringify({ token: authToken }));
+      ws.onopen = () => {
+        console.log('Connected to WebSocket server');
+        //const authToken: string = "somethingextrahereI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ"; // Replace with your actual token
+        //ws?.send(JSON.stringify({ wstoken: authToken }));
+        ws?.send(JSON.stringify({ salute: "hello!" }));
+      };
+
+      ws.onmessage = (event: MessageEvent) => {
+        const msg = JSON.parse(event.data);
+        console.log("message received: " + msg);
+        if (msg["salute"]) {
+          console.log("success");
+        }
+        if (msg && msg.merchant && msg.merchant === merchant) {
+          console.log("refetching");
+          refetch(); // Refetch the data if the condition is met
+        }
+      };
+
+      ws.onerror = (error: Event) => {
+        console.error('WebSocket error:', error);
+      };
+
+      ws.onclose = () => {
+        console.log('Disconnected from WebSocket server');
+        // Optionally, attempt to reconnect
+        setTimeout(connectWebSocket, 3000); // Reconnect after 3 seconds
+      };
     };
 
-    ws.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      // Check if the message contains a specific value
-      if (message.merchant === merchant) {
-        refetch(); // Refetch the data if the condition is met
-      }
-    };
-
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
-
-    ws.onclose = () => {
-      console.log('Disconnected from WebSocket server');
-    };
+    connectWebSocket();
 
     return () => {
-      ws.close();
+      ws?.close();
+      ws = null;
     };
-  }, [refetch, session, merchant]); // Add merchant to the dependency array
+  }, []);
 
   return <MaterialReactTable table={table} />;
 };
 
 const fetchDataFromApi = async (req: Request) => {
-  const API_URL = '/api/fetch/fetchBalanceBalances';
+  const API_URL = '/api/fetch/fetchUploadLogs';
   const customConfig = {
     headers: {
       'Content-Type': 'application/json'
@@ -342,7 +375,7 @@ const fetchDataFromApi = async (req: Request) => {
 
 //READ hook (get transactions from api)
 function useGetTransactions(req: Request) { //instead of any used to be Request
-  return useQuery<Transaction[]>({
+  return useQuery<UploadLogs[]>({
     queryKey: ['transactions'],
     queryFn: async () => {
       var dat = await fetchDataFromApi(req);

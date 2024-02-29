@@ -48,7 +48,7 @@ COPY . .
 #RUN chmod +x listener.py
 
 # Inform Docker that the container is listening on the specified port at runtime.
-EXPOSE 6789
+EXPOSE 4500
 
 # Run receiver.py when the container launches
-ENTRYPOINT ["python3", "broadcaster.py"]
+ENTRYPOINT ["python3", "sock.py"]

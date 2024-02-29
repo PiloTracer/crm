@@ -13,12 +13,12 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 # Set the working directory in the container
-WORKDIR /code/pytap
+WORKDIR /code/sock
 
 # Stage 2: Install Python dependencies
 FROM base AS builder
 
-# Copy the current directory contents into the container at /code/pytap
+# Copy the current directory contents into the container at /code/sock
 COPY requirements.txt ./
 
 # Install any needed packages specified in requirements.txt
@@ -33,9 +33,9 @@ ENV TZ=America/Los_Angeles
 
 # Copy pre-built wheels from builder stage
 COPY --from=builder /wheels /wheels
-COPY --from=builder /code/pytap/requirements.txt .
+COPY --from=builder /code/sock/requirements.txt .
 
-RUN mkdir -p /crmdir/uploads/pytap/log && chmod 777 /crmdir/uploads/pytap/log
+RUN mkdir -p /crmdir/uploads/sock/log && chmod 777 /crmdir/uploads/sock/log
 
 # Install the dependencies
 RUN pip install --no-cache /wheels/*
@@ -48,7 +48,7 @@ COPY . .
 #RUN chmod +x listener.py
 
 # Inform Docker that the container is listening on the specified port at runtime.
-EXPOSE 80
+EXPOSE 6789
 
 # Run receiver.py when the container launches
-ENTRYPOINT ["python3", "pytap.py"]
+ENTRYPOINT ["python3", "sock.py"]
