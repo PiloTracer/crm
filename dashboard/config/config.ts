@@ -17,6 +17,12 @@ export const config = {
   API_URL_USERACTDEACT: 'http://10.5.0.6:8000/messages/user/activate_deactivate',
   API_URL_MERCHANTS_ACTIVE: 'http://10.5.0.6:8000/merchant/listactive',
   API_URL_RABBIT_UPLOAD: 'http://10.5.0.8:5672',
-  API_URL_WEBSOCKETS: 'ws://localhost:4500/ws',
-  API_URL_WEBSOCKETS_INTERNAL: 'ws://10.5.0.7:4500/ws',
 };
+
+export function getWebSocketUrl(): string {
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+  const port = '4500'; // Define the port if it's different from the hostname's port
+  const protocol = hostname === 'localhost' ? 'ws' : 'wss'; // Use wss for secure WebSocket if not localhost
+
+  return `${protocol}://${hostname}:${port}/ws`;
+}

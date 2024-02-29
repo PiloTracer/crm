@@ -54,7 +54,7 @@ async def save_uploaded_file(file: UploadFile, directory: str, prefix: str) \
         o_log.parent = hash256
         o_log.status = status
         o_log.src = "File"
-        o_log.extra = None
+        o_log.extra = {"message": "-"}
         db_logtrx = get_dblogtrx()
         doc: Dict = o_log.to_dict()
         # pylint: disable = unused-variable

@@ -390,9 +390,26 @@ def uploads(
                 column_headers: str = "|".join(excel_data_df.columns)
                 validation_results = validate_parsed(
                     o_file, method, excel_data_df, column_headers)
+                ##################
+                # let's update the entry in the database
+                parts = filename.split("_")
+                db_logtrx = get_dblogtrx()
+                view_result = db_logtrx.view(
+                    'logtrx/by_doc_id',
+                    key=parts[1],
+                    include_docs=True)
+                doc = view_result.rows[0].doc
+                doc["extra"]["message"] = "Added Transactions"
+                ##################
                 if validation_results.status is False:
+                    validation_results.message = "Failed Validation"
                     message.status = 'nok'
                     message.message = "validation failed"
+                    doc["extra"] = validation_results.__dict__
+                db_logtrx.save(doc)
+                publishnewfile(filename)
+                # TODO: the following code is ugly, need to fix
+                if validation_results.status is False:
                     break
 
                 tmp = excel_data_df.values.tolist()

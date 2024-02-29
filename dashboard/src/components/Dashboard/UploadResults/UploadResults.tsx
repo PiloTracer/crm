@@ -28,7 +28,7 @@ import { useSession } from 'next-auth/react';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import React from 'react';
-import { config } from '../../../../config/config';
+import { config, getWebSocketUrl } from '../../../../config/config';
 
 const csvConfig = mkConfig({
   fieldSeparator: ',',
@@ -123,7 +123,7 @@ const UploadResultsTable: React.FC = () => {
         accessorKey: "status",
         header: "Status",
         enableEditing: false,
-        Cell: ({ cell }) => cell.getValue() ? 'Success' : 'Failed',
+        Cell: ({ cell }) => cell.getValue() ? 'Uploaded' : 'Failed',
         Edit: () => null
       },
       {
@@ -136,8 +136,31 @@ const UploadResultsTable: React.FC = () => {
         accessorKey: "extra",
         header: "Extra",
         enableEditing: false,
-        Edit: () => null
+        Edit: () => null,
+        Cell: ({ cell }) => {
+          const extra = cell.getValue();
+
+          if (extra && typeof extra === 'object') {
+            return (
+              <ul>
+                {extra.message && <li>{extra.message}</li>}
+
+                {extra.err && typeof extra.err === 'object' &&
+                  Object.entries(extra.err).map(([key, value]) => (
+                    <li key={key}>
+                      {key}: {value.toString()}
+                    </li>
+                  ))
+                }
+              </ul>
+            );
+          }
+
+          // Return null or some default display if extra is not available
+          return null;
+        }
       }
+
     ]
     ,
     [validationErrors, role],
@@ -309,7 +332,7 @@ const UploadResultsTable: React.FC = () => {
     let ws: WebSocket | null = null;
 
     const connectWebSocket = (): void => {
-      ws = new WebSocket(config.API_URL_WEBSOCKETS);
+      ws = new WebSocket(getWebSocketUrl());
 
       ws.onopen = () => {
         console.log('Connected to WebSocket server');
