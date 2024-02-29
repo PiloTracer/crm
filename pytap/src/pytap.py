@@ -40,6 +40,8 @@ class RedisSubscriber:
             logging.info(f"broadcast_message: {message}")
         except Exception as e:
             logging.info(f"broadcast_message error: {e}")
+        finally:
+            await self.close_websocket()
 
     def setup_subscriber(self):
         self.pubsub = self.redis_client.pubsub()
