@@ -27,6 +27,33 @@ export type RequestData = {
   transaction: RequestDataExtra
 }
 
+export type RequestCreate = {
+  _id: string | null,
+  customeraccount: string | null,
+  amount: number | 0,
+  fees: number | 0,
+  cxname: string | null,
+  routing: string | null,
+  bankaccount: string | null,
+  accounttype: string | null,
+  email: string | null,
+  address: string | null,
+  parent: string | null,
+  type: string | null,
+  trxtype: string | null,
+  method: string | null,
+  created: string | null,
+  createdf: string | null,
+  modified: string | null,
+  merchant: string | null,
+  status: string | null,
+  descriptor: string | null,
+  reference: string | null,
+  reason: string | null,
+  message: string | null,
+}
+
+
 export class TrxPromise<T> extends Promise<T>{
   _id: string = "";
   customeraccount: string = "";
@@ -111,6 +138,39 @@ export async function UpdateTransactionFnc<Transaction>(requestdata: RequestData
     return r;
   }
 }
+
+export async function CreateTransactionFnc<Transaction>(requestdata: RequestCreate) {
+  console.log(requestdata);
+  let data: any;
+  const API_URL = '/api/fetch/fetchBalanceCreate';
+  const customConfig = {
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  };
+  try {
+    const response = await axios.post(
+          API_URL,
+          requestdata,
+          customConfig
+    );
+
+    //maybe another type is required here:
+    data = await response.data as Transaction;
+
+    //if (data === undefined || data?.message === "nok") {
+    //  throw Error("creation failed!" + JSON.stringify(data));
+    //}
+
+  } catch(error) {
+    throw error;
+
+  } finally {
+    console.log("received data: ", data);
+    return data?.doc as Transaction;
+  }
+}
+
 
 
 export class ValidationError extends Error {

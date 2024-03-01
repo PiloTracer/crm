@@ -1,4 +1,6 @@
 '''redis subscriber'''
+import hashlib
+from dotenv import load_dotenv
 import json
 import redis
 import requests
@@ -6,8 +8,18 @@ import asyncio
 import websockets
 import logging
 from datetime import datetime
+import json as myjson
+
+
 
 class RedisSubscriber:
+    def generate_hash_from_json(self, data):
+        json_string = myjson.dumps(data, sort_keys=True, separators=(',', ':'))
+        return hashlib.sha256(json_string.encode()).hexdigest()
+
+    def serialize_to_json(self, data):
+        return myjson.dumps(data, sort_keys=True, separators=(',', ':'))
+
     def __init__(self, redis_host, redis_port, channel, websocket_url):
         self.redis_client = redis.StrictRedis(host=redis_host, port=redis_port, decode_responses=True)
         self.channel = channel
@@ -19,7 +31,7 @@ class RedisSubscriber:
     async def connect_websocket(self):
         logging.info(f"connect_websocket: entered")
         self.websocket = await websockets.connect(self.websocket_url)
-        logging.info("connect_websocket; complete")
+        logging.info("connect_websocket: complete")
 
     async def close_websocket(self):
         logging.info(f"close_websocket: entered")
@@ -35,7 +47,15 @@ class RedisSubscriber:
             if not self.websocket or self.websocket.closed:
                 logging.info(f"broadcast_message: reconnecting")
                 await self.connect_websocket()
-            message = json.dumps(data)
+            
+            
+            #objdata = myjson.loads(data)
+            data['token'] = ""
+            logging.info(f"new data: {json.dumps(data)}")
+            token = self.generate_hash_from_json(data)
+            data['token'] = token
+            message = self.serialize_to_json(data)
+
             await self.websocket.send(message)
             logging.info(f"broadcast_message: {message}")
         except Exception as e:

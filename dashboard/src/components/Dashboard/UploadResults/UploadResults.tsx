@@ -328,17 +328,36 @@ const UploadResultsTable: React.FC = () => {
     },
   });
 
+  function serializeToJson(data: any): string {
+    return JSON.stringify(data, Object.keys(data).sort(), 0);
+  }
+
+
   useEffect(() => {
     let ws: WebSocket | null = null;
 
     const connectWebSocket = (): void => {
       ws = new WebSocket(getWebSocketUrl());
 
-      ws.onopen = () => {
+      ws.onopen = async () => {
+        const API_URL = '/api/fetch/fetchGetHash';
         console.log('Connected to WebSocket server');
-        //const authToken: string = "somethingextrahereI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ"; // Replace with your actual token
-        //ws?.send(JSON.stringify({ wstoken: authToken }));
-        ws?.send(JSON.stringify({ salute: "hello!" }));
+        let msg = { salute: "hello!", token: "" };
+        const customConfig = {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        };
+        const response = await axios.post(
+          API_URL,
+          msg,
+          customConfig
+        );
+
+        msg["token"] = response.data["token"];
+        const strmsg = serializeToJson(msg);
+        console.log(strmsg);
+        ws?.send(strmsg);
       };
 
       ws.onmessage = (event: MessageEvent) => {

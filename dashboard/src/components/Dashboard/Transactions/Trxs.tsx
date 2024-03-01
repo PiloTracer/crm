@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { ReactNode, useMemo, useState } from 'react';
 import {
   MRT_EditActionButtons,
   MaterialReactTable,
@@ -8,6 +8,9 @@ import {
   type MRT_TableOptions,
   useMaterialReactTable,
   MRT_Cell,
+  MRT_TableInstance,
+  MRT_EditCellTextField,
+  MRT_Table,
 } from 'material-react-table';
 import {
   Box,
@@ -21,6 +24,7 @@ import {
 import {
   QueryClient,
   QueryClientProvider,
+  UseMutationResult,
   useMutation,
   useQuery,
   useQueryClient,
@@ -30,7 +34,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { mkConfig, generateCsv, download } from 'export-to-csv'; //or use your library of choice here
 import axios from 'axios';
-import { Transaction, UpdateTransactionFnc, RequestData } from '@/components/DbFunctions/UpdateTrx'
+import { Transaction, UpdateTransactionFnc, RequestData, CreateTransactionFnc, RequestCreate } from '@/components/DbFunctions/UpdateTrx'
 import { useSession } from 'next-auth/react';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -52,14 +56,14 @@ type Request = {
 }
 
 
-const Example: React.FC = () => {
+const ProcessorTransactions: React.FC = () => {
+  const [isCreating, setIsCreating] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState<boolean>(false);
   const [snackbarMessage, setSnackbarMessage] = useState<string>('');
   const { data: session } = useSession();
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string | undefined>
   >({});
-
 
   const handleOpenSnackbar = (message: any) => {
     setSnackbarMessage(message);
@@ -68,6 +72,8 @@ const Example: React.FC = () => {
   const handleCloseSnackbar = () => {
     setSnackbarOpen(false);
   };
+
+
 
   const merchant = useMemo(() => {
     const res: string = session?.user ? session.user.xmerchant : "";
@@ -140,30 +146,14 @@ const Example: React.FC = () => {
         Edit: () => null
       },
       {
-        accessorKey: "trxtype",
-        header: "Subtype",
-        enableEditing: false,
-        enableColumnFilter: false,
-        Edit: () => null
-      },
-      {
         accessorKey: "customeraccount",
-        header: "Customer",
-        enableEditing: false
-      },
-      {
-        accessorKey: "parent",
-        header: "File id",
-        enableEditing: false,
-        enableHiding: true,
-        enableColumnFilter: false,
-        visibleInShowHideMenu: false,
-        Edit: () => null
+        header: "Cust Act",
+        enableEditing: isCreating,
       },
       {
         accessorKey: "amount",
         header: "Amount",
-        enableEditing: false,
+        enableEditing: isCreating,
         muiTableBodyCellProps: {
           align: 'right',
         },
@@ -224,55 +214,59 @@ const Example: React.FC = () => {
       {
         accessorKey: "cxname",
         header: "Name",
-        enableEditing: false,
+        enableEditing: isCreating,
         enableColumnFilter: false,
-        Edit: () => null
+        //Edit: getEditComponent(isCreating),
       },
       {
         accessorKey: "routing",
         header: "Routing",
-        enableEditing: false,
+        enableEditing: isCreating,
         enableColumnFilter: false,
-        Edit: () => null
+        //Edit: getEditComponent(isCreating),
       },
       {
         accessorKey: "bankaccount",
         header: "Bank Acct",
-        enableEditing: false,
+        enableEditing: isCreating,
         enableColumnFilter: false,
-        Edit: () => null
+        //Edit: getEditComponent(isCreating),
       },
       {
         accessorKey: "accounttype",
         header: "T",
-        editVariant: 'select',
-        enableEditing: false,
+        enableEditing: isCreating,
         enableColumnFilter: false,
+        editVariant: 'select',
         editSelectOptions: [
           "c",
           "s",
           "m",
           "d"
         ],
-        Edit: () => null
+        //Edit: () => null
       },
       {
         accessorKey: "email",
         header: "Email",
-        enableEditing: false,
+        enableEditing: isCreating,
         enableColumnFilter: false,
-        Edit: () => null
+        //Edit: getEditComponent(isCreating),
       },
       {
         accessorKey: "address",
         header: "Address",
         enableColumnFilter: false,
-        Edit: () => null
+        //Edit: getEditComponent(isCreating),
       },
       {
         accessorKey: "method",
         header: "Method",
-        enableEditing: false
+        enableEditing: isCreating,
+        editVariant: 'select',
+        editSelectOptions: [
+          "netcashach"
+        ],
       },
       {
         accessorKey: "status",
@@ -302,7 +296,7 @@ const Example: React.FC = () => {
             ];
           }
         },
-        enableEditing: ["admin", "owner"].includes(role),
+        enableEditing: ["owner"].includes(role) && !isCreating,
         muiEditTextFieldProps: {
           select: true,
           error: !!validationErrors?.status,
@@ -312,7 +306,7 @@ const Example: React.FC = () => {
       {
         accessorKey: "reference",
         header: "Reference",
-        enableEditing: ["admin", "owner"].includes(role),
+        enableEditing: ["admin", "owner"].includes(role), // && !isCreating,
         enableColumnFilter: false,
         muiEditTextFieldProps: {
           required: false,
@@ -331,7 +325,7 @@ const Example: React.FC = () => {
         accessorKey: "descriptor",
         header: "Descriptor",
         /*size: 200,*/
-        enableEditing: ["admin", "owner"].includes(role),
+        enableEditing: ["admin", "owner"].includes(role), // && !isCreating,
         enableColumnFilter: false,
         muiEditTextFieldProps: {
           required: false,
@@ -349,7 +343,7 @@ const Example: React.FC = () => {
       {
         accessorKey: "reason",
         header: "Reason",
-        enableEditing: ["admin", "owner"].includes(role),
+        enableEditing: ["admin", "owner"].includes(role), // && !isCreating,
         enableColumnFilter: false,
         muiEditTextFieldProps: {
           required: false,
@@ -363,15 +357,26 @@ const Example: React.FC = () => {
             }),
           //optionally add validation checking for onBlur or onChange
         }
-      }
+      },
+      {
+        accessorKey: "trxtype",
+        header: "Subtype",
+        enableEditing: isCreating,
+        editVariant: 'select',
+        enableColumnFilter: false,
+        editSelectOptions: [
+          "payout",
+        ],
+        //Edit: getEditComponent(isCreating),
+      },
     ]
     ,
-    [validationErrors, role],
+    [isCreating, role, validationErrors],
   );
 
   //call CREATE hook
   const { mutateAsync: createTransaction, isPending: isCreatingTransaction } =
-    useCreateTransaction();
+    useCreateTransaction(merchant, id, token, role, { handleOpenSnackbar });
   //call READ hook
   const {
     data: fetchedTransactions = [],
@@ -379,7 +384,7 @@ const Example: React.FC = () => {
     isFetching: isFetchingTransactions,
     isLoading: isLoadingTransactions,
   } = useGetTransactions(req);
-  //call UPDATE hook
+  //call UPDATE hookk
   const { mutateAsync: updateTransaction, isPending: isUpdatingTransaction } =
     useUpdateTransaction(id, merchant, role, token, { handleOpenSnackbar });
   //call DELETE hook
@@ -392,7 +397,13 @@ const Example: React.FC = () => {
     table,
   }) => {
     const newValidationErrors = validateTransaction(values);
-    if (Object.values(newValidationErrors).some((error) => error)) {
+    const errorMessages = Object.values(newValidationErrors).filter(Boolean).join('\n');
+    setIsCreating(false);
+    if (errorMessages) {
+      const messageLines = errorMessages.split('\n').map((line, index) => (
+        <p key={index} style={{ margin: 0 }}>{line}</p>
+      ));
+      handleOpenSnackbar(messageLines);
       setValidationErrors(newValidationErrors);
       return;
     }
@@ -401,6 +412,7 @@ const Example: React.FC = () => {
     table.setCreatingRow(null); //exit creating mode
   };
 
+
   //UPDATE action
   const handleSaveTransaction: MRT_TableOptions<Transaction>['onEditingRowSave'] = async ({
     values,
@@ -408,6 +420,7 @@ const Example: React.FC = () => {
   }) => {
     const newValidationErrors = validateTransaction(values);
     const errorMessages = Object.values(newValidationErrors).filter(Boolean).join('\n');
+    setIsCreating(false);
     if (errorMessages) {
       const messageLines = errorMessages.split('\n').map((line, index) => (
         <p key={index} style={{ margin: 0 }}>{line}</p>
@@ -424,14 +437,69 @@ const Example: React.FC = () => {
 
   //DELETE action
   const openDeleteConfirmModal = (row: MRT_Row<Transaction>) => {
+    setIsCreating(false);
     if (window.confirm('Are you sure you want to delete this transaction?')) {
       deleteTransaction(row.original._id);
     }
   };
 
+  const renderEditRowDialogContentDef = ({
+    internalEditComponents,
+    row,
+    table
+  }: {
+    internalEditComponents: ReactNode[],
+    row: MRT_Row<Transaction>,
+    table: MRT_TableInstance<Transaction>
+  }) => {
+    // Define fields to hide based on the row status
+    const fieldsToHideWhenCreating = [
+      "status",
+      "descriptor",
+      "reference",
+      "reason",
+      "status",
+      "fees"
+    ]; // Replace with actual field names for creation
+    const fieldsToHideWhenEditing = [
+      "trxtype",
+      "routing",
+      "bankaccount",
+      "accounttype",
+      "email",
+      "address"]; // Replace with actual field names for editing
+
+    // Filter out components to hide based on the row status
+    const filteredEditComponents = internalEditComponents.filter((component, index) => {
+      if (isCreating) {
+        const columnId = table.getAllLeafColumns()[index + 1]?.id;
+        //console.log(index + ": " + columnId + " " + String(!fieldsToHideWhenCreating.includes(columnId)));
+        return !fieldsToHideWhenCreating.includes(columnId);
+      } else {
+        const columnId = table.getAllLeafColumns()[index + 2]?.id;
+        //console.log(index + ": " + columnId + " " + String(!fieldsToHideWhenEditing.includes(columnId)));
+        return !fieldsToHideWhenEditing.includes(columnId);
+      }
+    });
+
+    return (
+      <>
+        <DialogContent>
+          {filteredEditComponents}
+        </DialogContent>
+        <DialogActions>
+          <MRT_EditActionButtons variant="text" table={table} row={row} />
+        </DialogActions>
+      </>
+    );
+  };
+
+
+
   const table = useMaterialReactTable({
     columns,
     enableColumnFilterModes: true,
+    renderEditRowDialogContent: renderEditRowDialogContentDef,
     enableColumnPinning: true,
     enableColumnActions: true,
     initialState: {
@@ -442,7 +510,7 @@ const Example: React.FC = () => {
       },
       sorting: [
         {
-          id: 'created',
+          id: 'createdf',
           desc: true
         }
       ],
@@ -459,7 +527,7 @@ const Example: React.FC = () => {
     layoutMode: 'semantic',
     createDisplayMode: 'modal', //default ('row', and 'custom' are also available)
     editDisplayMode: 'modal', //default ('row', 'cell', 'table', and 'custom' are also available)
-    enableEditing: ["admin", "owner"].includes(role),
+    enableEditing: ["owner"].includes(role),
     getRowId: (row) => row?._id,
     muiSearchTextFieldProps: {
       size: 'small',
@@ -502,55 +570,36 @@ const Example: React.FC = () => {
         color: cell.row.original.status === 'approved' ? 'green' : cell.row.original.status === 'reversed' ? 'red' : 'inherit',
       },
     }),
-    onCreatingRowCancel: () => setValidationErrors({}),
+    onCreatingRowCancel: () => {
+      setIsCreating(false);
+      setValidationErrors({});
+    },
     onCreatingRowSave: handleCreateTransaction,
-    onEditingRowCancel: () => setValidationErrors({}),
+    onEditingRowCancel: () => {
+      setIsCreating(false);
+      setValidationErrors({});
+    },
     onEditingRowSave: handleSaveTransaction,
-
-
-
-    //optionally customize modal content
-    renderCreateRowDialogContent: ({ table, row, internalEditComponents }) => (
-      <>
-        <DialogTitle variant="h3">Create New Transaction</DialogTitle>
-        <DialogContent
-          sx={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
-        >
-          {internalEditComponents} {/* or render custom edit components here */}
-        </DialogContent>
-        <DialogActions>
-          <MRT_EditActionButtons variant="text" table={table} row={row} />
-        </DialogActions>
-      </>
-    ),
-    //optionally customize modal content
-    renderEditRowDialogContent: ({ table, row, internalEditComponents }) => (
-      <>
-        {/*<DialogTitle variant="h3">Edit Transaction</DialogTitle>*/}
-        <DialogContent
-          sx={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
-        >
-          {internalEditComponents} {/* or render custom edit components here */}
-        </DialogContent>
-        <DialogActions>
-          <MRT_EditActionButtons variant="text" table={table} row={row} />
-        </DialogActions>
-      </>
-    ),
-    renderRowActions: ({ row, table }) => (
-      role == "owner" && <Box sx={{ display: 'flex', gap: '1rem' }}>
-        <Tooltip title="Edit">
-          <IconButton color="success" onClick={() => table.setEditingRow(row)}>
-            <EditIcon />
-          </IconButton>
-        </Tooltip>
-        {/* <Tooltip title="Delete">
+    renderRowActions: ({ row }) => {
+      if (role == "owner") {
+        return (
+          <Box sx={{ display: 'flex', gap: '1rem' }}>
+            <Tooltip title="Edit">
+              <IconButton color="success" onClick={() => table.setEditingRow(row)}>
+                <EditIcon />
+              </IconButton>
+            </Tooltip>
+            {/* <Tooltip title="Delete">
           <IconButton color="error" onClick={() => openDeleteConfirmModal(row)}>
             <DeleteIcon />
           </IconButton>
         </Tooltip> */}
-      </Box>
-    ),
+          </Box>
+        )
+      }
+      return null; // No actions for this row
+    },
+
     renderTopToolbarCustomActions: ({ table }) => (
       <Box
         sx={{
@@ -561,16 +610,11 @@ const Example: React.FC = () => {
         }}
       >
 
-        {false && <Button
+        {["admin", "standard"].includes(role) && <Button
           variant="contained"
           onClick={() => {
+            setIsCreating(true); // Set isCreating to true
             table.setCreatingRow(true); //simplest way to open the create row modal with no default values
-            //or you can pass in a row object to set default values with the `createRow` helper function
-            // table.setCreatingRow(
-            //   createRow(table, {
-            //     //optionally pass in default values for the new row, useful for nested data or other complex scenarios
-            //   }),
-            // );
           }}
         >
           Create New Transaction
@@ -633,20 +677,59 @@ const Example: React.FC = () => {
   );
 };
 
+type useCreateTransactionProps = {
+  handleOpenSnackbar: (message: string) => void;
+};
+
 //CREATE hook (post new transaction to api)
-function useCreateTransaction() {
+function useCreateTransaction(
+  merchant: string,
+  id: string,
+  token: string,
+  role: string,
+  { handleOpenSnackbar }: useCreateTransactionProps
+): UseMutationResult<Transaction, unknown, Transaction> {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (transaction: Transaction) => {
-      //send api update request here
-      await new Promise((resolve) => setTimeout(resolve, 1000)); //fake api call
-      return Promise.resolve();
+      const request: RequestCreate = {
+        _id: null,
+        customeraccount: transaction.customeraccount,
+        amount: transaction.amount,
+        fees: 0,
+        cxname: transaction.cxname,
+        routing: transaction.routing,
+        bankaccount: transaction.bankaccount,
+        accounttype: transaction.accounttype,
+        email: transaction.email,
+        address: transaction.address,
+        parent: null,
+        type: "row",
+        trxtype: "payout",
+        method: "netcashach",
+        created: null,
+        createdf: null,
+        modified: null,
+        merchant: merchant,
+        status: "pending",
+        descriptor: null,
+        reference: null,
+        reason: null,
+        message: null
+      };
+
+      let res: Transaction = await CreateTransactionFnc(request);
+      return res;
     },
     //client side optimistic update
     onMutate: (newTransactionInfo: Transaction) => {
-      queryClient.setQueryData(
+      // Store the previous transactions in case we need to roll back
+      const previousTransactions = queryClient.getQueryData<Transaction[]>(['transactions']);
+
+      // Optimistically update the transactions
+      queryClient.setQueryData<Transaction[]>(
         ['transactions'],
-        (prevTransactions: any) =>
+        (prevTransactions: Transaction[] = []) =>
           [
             ...prevTransactions,
             {
@@ -655,6 +738,25 @@ function useCreateTransaction() {
             },
           ] as Transaction[],
       );
+
+      // Return the rollback function
+      return { rollback: () => queryClient.setQueryData(['transactions'], previousTransactions) };
+    },
+    onError: (error, variables, context) => {
+      console.log("error!!!");
+      context?.rollback?.();
+    },
+    onSuccess: (data: Transaction, variables, context) => {
+      console.log("data: ", data);
+      console.log("variables: ", variables);
+      if (data === undefined || data?.message == undefined || data?.message != "ok") {
+        //console.log("reverting... ", '-variables-', JSON.stringify(variables), '-data-', JSON.stringify(data));
+        handleOpenSnackbar("Transaction failed, possible Non Sufficient Funds");
+        context?.rollback?.();
+      }
+      else {
+        handleOpenSnackbar("Transaction successful!");
+      }
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['transactions'] }), //refetch transactions after mutation, disabled for demo
   });
@@ -820,7 +922,7 @@ const ExampleWithProviders = () => (
   //Put this with your other react-query providers near root of your app
   <LocalizationProvider dateAdapter={AdapterDayjs}>
     <QueryClientProvider client={queryClient}>
-      <Example />
+      <ProcessorTransactions />
     </QueryClientProvider>
   </LocalizationProvider>
 );

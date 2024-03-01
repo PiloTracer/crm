@@ -487,8 +487,7 @@ def uploads(
     message.header = "uploadresult"
     message.message = filename
     message.merchant = merch
-    message.wstoken = "somethingextrahereI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ"  # noqa: E501
-    jsonstring = json.dumps(message.__dict__)
+    jsonstring = json.dumps(message.to_dict())
     publish_message('10.5.0.4', 6379, message.channel, jsonstring)
     return inserted_document_ids
 
@@ -531,7 +530,7 @@ async def publishnewfile(filename):
     message.message = filename
     message.merchant = merch
 
-    jsonstring = json.dumps(message.__dict__)
+    jsonstring = json.dumps(message.to_dict())
 
     publish_message('10.5.0.4', 6379, message.channel, jsonstring)
 

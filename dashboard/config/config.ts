@@ -19,6 +19,10 @@ export const config = {
   API_URL_RABBIT_UPLOAD: 'http://10.5.0.8:5672',
 };
 
+export const consts = {
+  SALT: 'AKksl0Fsdk200fGjK100$',
+};
+
 export function getWebSocketUrl(): string {
   const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
   const port = '4500'; // Define the port if it's different from the hostname's port
