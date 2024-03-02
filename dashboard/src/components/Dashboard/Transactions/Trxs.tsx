@@ -1,4 +1,4 @@
-import { ReactNode, useMemo, useState } from 'react';
+import { ReactElement, ReactNode, useMemo, useState } from 'react';
 import {
   MRT_EditActionButtons,
   MaterialReactTable,
@@ -41,6 +41,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import Snackbar from '@mui/material/Snackbar';
 import { red } from '@mui/material/colors';
 import { isSafeStringRe } from '@/helper/Sanitize';
+import React from 'react';
 
 const csvConfig = mkConfig({
   fieldSeparator: ',',
@@ -443,6 +444,10 @@ const ProcessorTransactions: React.FC = () => {
     }
   };
 
+  interface EditComponentProps {
+    row: MRT_Row<Transaction>;
+  }
+
   const renderEditRowDialogContentDef = ({
     internalEditComponents,
     row,
@@ -453,33 +458,36 @@ const ProcessorTransactions: React.FC = () => {
     table: MRT_TableInstance<Transaction>
   }) => {
     // Define fields to hide based on the row status
-    const fieldsToHideWhenCreating = [
+    const i = !isCreating ? 2 : 1;
+    const hiddenComponents = !isCreating ? [
+      "trxtype",
+      "routing",
+      "bankaccount",
+      "accounttype",
+      "email",
+      "address"] : [
       "status",
       "descriptor",
       "reference",
       "reason",
       "status",
       "fees"
-    ]; // Replace with actual field names for creation
-    const fieldsToHideWhenEditing = [
-      "trxtype",
-      "routing",
-      "bankaccount",
-      "accounttype",
-      "email",
-      "address"]; // Replace with actual field names for editing
+    ];
 
     // Filter out components to hide based on the row status
-    const filteredEditComponents = internalEditComponents.filter((component, index) => {
-      if (isCreating) {
-        const columnId = table.getAllLeafColumns()[index + 1]?.id;
-        //console.log(index + ": " + columnId + " " + String(!fieldsToHideWhenCreating.includes(columnId)));
-        return !fieldsToHideWhenCreating.includes(columnId);
-      } else {
-        const columnId = table.getAllLeafColumns()[index + 2]?.id;
-        //console.log(index + ": " + columnId + " " + String(!fieldsToHideWhenEditing.includes(columnId)));
-        return !fieldsToHideWhenEditing.includes(columnId);
+    const filteredEditComponents = internalEditComponents.map((component, index) => {
+      const columnId = table.getAllLeafColumns()[index + i]?.id;
+      if (hiddenComponents.includes(columnId)) {
+        return null;
       }
+
+      // Check if the component is a valid React element
+      if (React.isValidElement<EditComponentProps>(component)) {
+        // Use React.cloneElement to clone the component and pass new props
+        // Type assertion is used here to indicate that the component can accept 'row' prop
+        return React.cloneElement(component as ReactElement<EditComponentProps>, { key: index, row });
+      }
+      return null;
     });
 
     return (
