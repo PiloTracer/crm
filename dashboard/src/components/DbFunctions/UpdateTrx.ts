@@ -31,6 +31,7 @@ export type RequestCreate = {
   _id: string | null,
   customeraccount: string | null,
   amount: number | 0,
+  currency: string | null,
   fees: number | 0,
   cxname: string | null,
   routing: string | null,
@@ -42,15 +43,11 @@ export type RequestCreate = {
   type: string | null,
   trxtype: string | null,
   method: string | null,
-  created: string | null,
-  createdf: string | null,
-  modified: string | null,
+  created_by: string | null,
+  created_merchant: string | null,
   merchant: string | null,
-  status: string | null,
-  descriptor: string | null,
-  reference: string | null,
-  reason: string | null,
   message: string | null,
+  origen: string | null,
 }
 
 
@@ -142,7 +139,7 @@ export async function UpdateTransactionFnc<Transaction>(requestdata: RequestData
 export async function CreateTransactionFnc<Transaction>(requestdata: RequestCreate) {
   console.log(requestdata);
   let data: any;
-  const API_URL = '/api/fetch/fetchBalanceCreate';
+  const API_URL = '/api/fetch/fetchProcessorTransactionCreate';
   const customConfig = {
     headers: {
       'Content-Type': 'application/json'

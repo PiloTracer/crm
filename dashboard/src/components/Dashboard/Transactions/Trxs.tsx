@@ -1,4 +1,4 @@
-import { ReactElement, ReactNode, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   MRT_EditActionButtons,
   MaterialReactTable,
@@ -7,17 +7,13 @@ import {
   type MRT_Row,
   type MRT_TableOptions,
   useMaterialReactTable,
-  MRT_Cell,
   MRT_TableInstance,
-  MRT_EditCellTextField,
-  MRT_Table,
 } from 'material-react-table';
 import {
   Box,
   Button,
   DialogActions,
   DialogContent,
-  DialogTitle,
   IconButton,
   Tooltip,
 } from '@mui/material';
@@ -56,8 +52,18 @@ type Request = {
   merchant: string
 }
 
+interface RenderEditRowDialogContentDefProps {
+  internalEditComponents: React.ReactNode[];
+  row: MRT_Row<Transaction>;
+  table: MRT_TableInstance<Transaction>;
+}
 
-const ProcessorTransactions: React.FC = () => {
+interface UserProps {
+  mactive: string[]; // Replace MyDataType with the correct type for your data
+}
+
+
+const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
   const [isCreating, setIsCreating] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState<boolean>(false);
   const [snackbarMessage, setSnackbarMessage] = useState<string>('');
@@ -142,9 +148,24 @@ const ProcessorTransactions: React.FC = () => {
       },
       {
         accessorKey: "merchant",
+
         header: "Merchant",
-        enableEditing: false,
-        Edit: () => null
+        editVariant: 'select',
+        enableEditing: ["owner"].includes(role) && isCreating,
+        /* TODO: these options must be dynamic */
+        editSelectOptions: role == "owner" ? mactive : [merchant],
+        muiEditTextFieldProps: {
+          required: false,
+          error: !!validationErrors?.merchant,
+          helperText: validationErrors?.merchant,
+          //remove any previous validation errors when transaction focuses on the input
+          onFocus: () =>
+            setValidationErrors({
+              ...validationErrors,
+              reson: undefined,
+            }),
+          //optionally add validation checking for onBlur or onChange
+        }
       },
       {
         accessorKey: "customeraccount",
@@ -397,7 +418,7 @@ const ProcessorTransactions: React.FC = () => {
     values,
     table,
   }) => {
-    const newValidationErrors = validateTransaction(values);
+    const newValidationErrors = validateTransactionCreate(values);
     const errorMessages = Object.values(newValidationErrors).filter(Boolean).join('\n');
     setIsCreating(false);
     if (errorMessages) {
@@ -444,50 +465,23 @@ const ProcessorTransactions: React.FC = () => {
     }
   };
 
-  interface EditComponentProps {
-    row: MRT_Row<Transaction>;
-  }
-
   const renderEditRowDialogContentDef = ({
     internalEditComponents,
     row,
-    table
-  }: {
-    internalEditComponents: ReactNode[],
-    row: MRT_Row<Transaction>,
-    table: MRT_TableInstance<Transaction>
-  }) => {
-    // Define fields to hide based on the row status
-    const i = !isCreating ? 2 : 1;
-    const hiddenComponents = !isCreating ? [
-      "trxtype",
-      "routing",
-      "bankaccount",
-      "accounttype",
-      "email",
-      "address"] : [
-      "status",
-      "descriptor",
-      "reference",
-      "reason",
-      "status",
-      "fees"
-    ];
+    table,
+  }: RenderEditRowDialogContentDefProps) => {
+    const hiddenComponents = isCreating
+      ? ["status", "descriptor", "reference", "reason", "fees"]
+      : ["trxtype", "routing", "bankaccount", "accounttype", "email", "address"];
 
-    // Filter out components to hide based on the row status
-    const filteredEditComponents = internalEditComponents.map((component, index) => {
-      const columnId = table.getAllLeafColumns()[index + i]?.id;
-      if (hiddenComponents.includes(columnId)) {
-        return null;
+    // Filter out components based on the hiddenComponents array
+    const filteredEditComponents = internalEditComponents.filter((component) => {
+      if (React.isValidElement(component)) {
+        // Extract the cell from each component's props, if the component is a valid React element
+        const cell = component.props.cell;
+        return cell && !hiddenComponents.includes(cell.column.id);
       }
-
-      // Check if the component is a valid React element
-      if (React.isValidElement<EditComponentProps>(component)) {
-        // Use React.cloneElement to clone the component and pass new props
-        // Type assertion is used here to indicate that the component can accept 'row' prop
-        return React.cloneElement(component as ReactElement<EditComponentProps>, { key: index, row });
-      }
-      return null;
+      return false;
     });
 
     return (
@@ -501,6 +495,8 @@ const ProcessorTransactions: React.FC = () => {
       </>
     );
   };
+
+
 
 
 
@@ -618,7 +614,7 @@ const ProcessorTransactions: React.FC = () => {
         }}
       >
 
-        {["admin", "standard"].includes(role) && <Button
+        {["admin", "standard", "owner"].includes(role) && <Button
           variant="contained"
           onClick={() => {
             setIsCreating(true); // Set isCreating to true
@@ -704,6 +700,7 @@ function useCreateTransaction(
         _id: null,
         customeraccount: transaction.customeraccount,
         amount: transaction.amount,
+        currency: "usd",
         fees: 0,
         cxname: transaction.cxname,
         routing: transaction.routing,
@@ -715,15 +712,11 @@ function useCreateTransaction(
         type: "row",
         trxtype: "payout",
         method: "netcashach",
-        created: null,
-        createdf: null,
-        modified: null,
-        merchant: merchant,
-        status: "pending",
-        descriptor: null,
-        reference: null,
-        reason: null,
-        message: null
+        created_by: id,
+        created_merchant: merchant,
+        merchant: transaction.merchant,
+        message: null,
+        origen: "main"
       };
 
       let res: Transaction = await CreateTransactionFnc(request);
@@ -926,16 +919,16 @@ function useDeleteTransaction() {
 
 const queryClient = new QueryClient();
 
-const ExampleWithProviders = () => (
+const TransactionsGrid: React.FC<UserProps> = ({ mactive }) => (
   //Put this with your other react-query providers near root of your app
   <LocalizationProvider dateAdapter={AdapterDayjs}>
     <QueryClientProvider client={queryClient}>
-      <ProcessorTransactions />
+      <ProcessorTransactions mactive={mactive} />
     </QueryClientProvider>
   </LocalizationProvider>
 );
 
-export default ExampleWithProviders;
+export default TransactionsGrid;
 
 const validateRequired = (value: string) => !!value.length;
 
@@ -955,5 +948,10 @@ function validateTransaction(transaction: Transaction) {
       || !isSafeStringRe(String(transaction.reason))
       ? 'Reason is empty or contains forbidden characters'
       : '',
+  };
+}
+
+function validateTransactionCreate(transaction: Transaction) {
+  return {
   };
 }

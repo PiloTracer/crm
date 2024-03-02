@@ -201,22 +201,36 @@ async def get_api_auth(
         }
 
 
+@routerpull.post("/transaction/create")
+async def transaction_create(
+    request: UserApiTrxSchema,
+):
+    '''Add a manual transaction'''
+    request.origen = "main"
+    result = await transaction_add(request)
+    return result
+
+
 @routerpull.post("/transaction/add")
 async def transaction_add(
-    request: UserApiTrxSchema,
-    dbu: Server = Depends(get_dbusr),
-    dbm: Server = Depends(get_dbmerchant),
-    db: Server = Depends(get_dbtrx)
+    request: UserApiTrxSchema
 ):
     '''Add a transaction through API'''
 
+    dbu = get_dbusr()
+    dbm = get_dbmerchant()
+    db = get_dbtrx()
+
     #
     # Default response message
+    request.origen = "customer" if request.origen != "main" else "main"
+    request.authemail = request.created_by
     message: MessageSchemaRef = MessageSchemaRef(
-        status='nok', message='failed', reference=None, error='default error')
+        status='failed', message='nok', reference=None, error='default error')
 
     #
     # Validate the request
+    # http://localhost:6984/w_merchants/_design/Merchant/_view/vProcessors?key=[%22cliente%22,%22netcashach%22]
     oprocessor = dbm.view('Merchant/vProcessors',
                           key=[request.merchant, request.method], limit=1)
     if len(oprocessor.rows) > 0:
@@ -224,19 +238,25 @@ async def transaction_add(
     else:
         oprocessor = None
     ouser: UserApiClass = UserApiClass(**dbu.get(request.authemail))
-    omerch: MerchModel = MerchModel(**dbm.get(ouser.merchant))
-    if (ouser.apitoken != request.apikey
-        or ouser.active is False
-            or omerch.active is False
-            or oprocessor is None
-            or oprocessor.active is False):
+    merch: str = ouser.merchant \
+        if request.origen == "customer" \
+        else request.merchant
+    omerch: MerchModel = MerchModel(
+        **dbm.get(merch)
+    )
+    if (request.origen != "main"
+        and (ouser.apitoken != request.apikey
+             or ouser.active is False
+             or omerch.active is False
+             or oprocessor is None
+             or oprocessor.active is False)):
         message.error = "failed to validate the request"
         return message
 
     #
     # Get and calculate fees
     ofees = dbm.view('Merchant/vFees',
-                     key=[ouser.merchant, request.method, True])
+                     key=[merch, request.method, True])
     if len(ofees.rows) > 0:
         ofees = [MerchFeeModel(**row.value) for row in ofees]
     else:
@@ -277,15 +297,13 @@ async def transaction_add(
         id=request.id
     )
 
-    doc = line.to_dict()
+    doc = line.to_dict(request.origen == "customer")
 
     # pylint: disable=unused-variable
     doc_id, doc_rev = db.save(doc)
+    message = db.get(doc_id)
     if doc_id is not None and doc_id != "":
-        message.status = "ok"
-        message.message = "transaction added"
-        message.error = None
-        message.reference = doc_id
+        message["message"] = "ok"
 
     return message
 

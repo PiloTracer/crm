@@ -54,7 +54,7 @@ interface UserProps {
 
 let data: Transaction[] = [];
 
-const Example: React.FC<UserProps> = ({ mactive }) => {
+const WalletAdjustments: React.FC<UserProps> = ({ mactive }) => {
   const { setNeedsUpdate } = useUpdateGridContext();
   const [snackbarOpen, setSnackbarOpen] = useState<boolean>(false);
   const [snackbarMessage, setSnackbarMessage] = useState<string>('');
@@ -854,7 +854,7 @@ const queryClient = new QueryClient();
 const AdjustmentGrid: React.FC<UserProps> = ({ mactive }) => (
   <LocalizationProvider dateAdapter={AdapterDayjs}>
     <QueryClientProvider client={queryClient}>
-      <Example mactive={mactive} />
+      <WalletAdjustments mactive={mactive} />
     </QueryClientProvider>
   </LocalizationProvider>
 );

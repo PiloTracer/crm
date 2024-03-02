@@ -1,7 +1,7 @@
 """class description"""
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class MessageGeneralSchema(BaseModel):
@@ -43,26 +43,60 @@ class UserApiEmailSchema(BaseModel):
 
 class UserApiTrxSchema(BaseModel):
     """Basic Schema to receive a new Transaction via API"""
-    id: str
-    authchecksum: str
-    authemail: str
+    id: Optional[str] = Field(None, alias='_id')
+    authchecksum: Optional[str] = None
+    authemail: Optional[str] = None
     customeraccount: str
     amount: str
     currency: str
+    fees: Optional[float] = 0
     cxname: str
     routing: str
     bankaccount: str
     accounttype: str
     email: str
     address: str
-    trxtype: str
-    parent: str
+    trxtype: Optional[str] = None
+    parent: Optional[str] = None
+    type: Optional[str] = None
     merchant: str
-    comment: Optional[str] = ""
+    comment: Optional[str] = None
     method: str
-    version: str
-    apikey: str
-    origen: str
+    version: Optional[str] = "0"
+    apikey: Optional[str] = None
+    origen: Optional[str] = None
+    created_by: Optional[str] = None
+    created_merchant: Optional[str] = None
+
+    def to_dict(self):
+        """convert to dict"""
+        # Convert the object to a dictionary for storing in CouchDB
+        return {
+            'id': self.id,
+            'authchecksum': self.authchecksum,
+            'authemail': self.authemail,
+            'customeraccount': self.customeraccount,
+            'amount': self.amount,
+            'currency': self.currency,
+            'fees': self.fees,
+            'cxname': self.cxname,
+            'routing': self.routing,
+            'bankaccount': self.bankaccount,
+            'accounttype': self.accounttype,
+            'email': self.email,
+            'address': self.address,
+            'trxtype': self.trxtype,
+            'parent': self.parent,
+            'type': self.type,
+            'merchant': self.merchant,
+            'comment': self.comment,
+            'method': self.method,
+            'version': self.version,
+            'apikey': self.apikey,
+            'origen': self.origen,
+            'created_by': self.created_by,
+            'created_merchant': self.created_merchant
+        }
 
 
 class UserApiCreate(BaseModel):
@@ -360,29 +394,29 @@ class TrxRowEcheckId(TrxRowEcheck):
             accounttype,
             email,
             address,
-            trxtype=None,
-            fees=0,
-            parent=None,
-            type="row",
-            method="",
-            created=0,
-            modified=0,
-            createds=0,
-            modifieds=0,
-            merchant=None,
-            status="pending",
-            descriptor=None,
-            reference=None,
-            reason=None,
-            comment=None,
-            origen=None
+            trxtype,
+            fees,
+            parent,
+            type,
+            method,
+            created,
+            modified,
+            createds,
+            modifieds,
+            merchant,
+            status,
+            descriptor,
+            reference,
+            reason,
+            comment,
+            origen
         )
         self.id: str = id
 
-    def to_dict(self):
+    def to_dict(self, withid: bool = True):
         """convert to dict"""
         # Convert the object to a dictionary for storing in CouchDB
-        return {
+        d = {
             'customeraccount': self.customeraccount,
             'amount': self.amount,
             'cxname': self.cxname,
@@ -406,9 +440,11 @@ class TrxRowEcheckId(TrxRowEcheck):
             'reference': "" if self.reference is None else self.reference,
             'reason': "" if self.reason is None else self.reason,
             'comment': "" if self.comment is None else self.comment,
-            'origen': "" if self.origen is None else self.origen,
-            '_id': self.id
+            'origen': "" if self.origen is None else self.origen
         }
+        if withid:
+            d["_id"] = self.id
+        return d
 
     class Config:
         """docstring"""
