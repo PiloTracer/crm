@@ -16,6 +16,7 @@ import {
   DialogContent,
   IconButton,
   Tooltip,
+  Typography,
 } from '@mui/material';
 import {
   QueryClient,
@@ -140,10 +141,7 @@ const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
         enableColumnFilter: true,
         enableEditing: false,
         filterVariant: 'datetime-range',
-        Cell: ({ cell }) =>
-          `${cell.getValue<Date>().toLocaleDateString()} ${cell
-            .getValue<Date>()
-            .toLocaleTimeString()}`, // convert back to string for display,
+        Cell: ({ cell }) => cell.getValue<Date>().toLocaleDateString(),
         Edit: () => null
       },
       {
@@ -234,6 +232,7 @@ const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
           //optionally add validation checking for onBlur or onChange
         }
       },
+
       {
         accessorKey: "fees",
         header: "Fees",
@@ -253,6 +252,7 @@ const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
           </>
         )
       },
+
       {
         accessorKey: "cxname",
         header: "Name",
@@ -267,6 +267,7 @@ const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
         enableColumnFilter: false,
         //Edit: getEditComponent(isCreating),
       },
+
       {
         accessorKey: "bankaccount",
         header: "Bank Acct",
@@ -301,6 +302,7 @@ const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
         enableColumnFilter: false,
         //Edit: getEditComponent(isCreating),
       },
+
       {
         accessorKey: "method",
         header: "Method",
@@ -345,6 +347,7 @@ const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
           helperText: validationErrors?.status,
         }
       },
+
       {
         accessorKey: "reference",
         header: "Reference",
@@ -366,7 +369,6 @@ const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
       {
         accessorKey: "descriptor",
         header: "Descriptor",
-        /*size: 200,*/
         enableEditing: ["admin", "owner"].includes(role), // && !isCreating,
         enableColumnFilter: false,
         muiEditTextFieldProps: {
@@ -400,6 +402,7 @@ const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
           //optionally add validation checking for onBlur or onChange
         }
       },
+
       {
         accessorKey: "trxtype",
         header: "Subtype",
@@ -527,7 +530,7 @@ const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
     enableColumnPinning: true,
     enableColumnActions: true,
     initialState: {
-      density: 'compact', columnVisibility: { parent: false, _id: false, type: false },
+      density: 'compact', columnVisibility: { routing: false, accounttype: false, address: false, descriptor: false, reason: false, bankaccount: false, email: false, reference: false, fees: false, parent: false, _id: false, type: false },
       columnPinning: {
         left: ['mrt-row-expand', 'mrt-row-select'],
         right: role == "owner" ? ['mrt-row-actions'] : [],
@@ -543,6 +546,46 @@ const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
         pageIndex: 0, // This sets the initial page index (0 for the first page)
       },
     },
+    enableExpandAll: false, //disable expand all button
+    muiDetailPanelProps: () => ({
+      sx: (theme) => ({
+        backgroundColor:
+          theme.palette.mode === 'dark'
+            ? 'rgba(255,210,244,0.1)'
+            : 'rgba(0,0,0,0.1)',
+      }),
+    }),
+    //custom expand button rotation
+    muiExpandButtonProps: ({ row, table }) => ({
+      onClick: () => table.setExpanded({ [row.id]: !row.getIsExpanded() }), //only 1 detail panel open at a time
+      sx: {
+        transform: row.getIsExpanded() ? 'rotate(180deg)' : 'rotate(-90deg)',
+        transition: 'transform 0.2s',
+      },
+    }),
+    //conditionally render detail panel
+    renderDetailPanel: ({ row }) =>
+      row.original.address ? (
+        <Box
+          sx={{
+            display: 'grid',
+            margin: 'auto',
+            gridTemplateColumns: '1fr 1fr',
+            width: '100%',
+          }}
+        >
+          <Typography>Routing: {row.original.routing}</Typography>
+          <Typography>Bank Account: {row.original.bankaccount}</Typography>
+          <Typography>Account Type: {row.original.accounttype}</Typography>
+          <Typography>Email: {row.original.email}</Typography>
+          <Typography>Address: {row.original.address}</Typography>
+          <Typography>Parent: {row.original.parent}</Typography>
+          <Typography>Descriptor: {row.original.descriptor}</Typography>
+          <Typography>Reference: {row.original.reference}</Typography>
+          <Typography>Reason: {row.original.reason}</Typography>
+          <Typography>Fees: {row.original.fees}</Typography>
+        </Box>
+      ) : null,
     paginationDisplayMode: 'pages',
     data: fetchedTransactions,
     positionToolbarAlertBanner: 'bottom',
@@ -590,6 +633,7 @@ const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
     muiTableBodyCellProps: ({ cell }) => ({
       //conditionally style pinned columns
       sx: {
+        padding: '0px 0px',
         fontSize: '12px',
         color: cell.row.original.status === 'approved' ? 'green' : cell.row.original.status === 'reversed' ? 'red' : 'inherit',
       },
