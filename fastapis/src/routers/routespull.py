@@ -270,6 +270,7 @@ async def transaction_add(
     line: TrxRowEcheckId = TrxRowEcheckId(
         customeraccount=request.customeraccount,
         amount=float(request.amount),
+        currency=request.currency,
         cxname=request.cxname,
         routing=request.routing,
         bankaccount=request.bankaccount,
@@ -442,9 +443,11 @@ def uploads(
                         total = line.amount
                         count = int(line.cxname)
                     else:
+                        line.currency = "usd"
                         line.fees = get_fees(abs(line.amount), ofees)
                         line.method = method
                         line.status = "pending"
+
                         line.merchant = merch
                         line.created = \
                             int(datetime.fromtimestamp(entry.stat().st_ctime).
@@ -531,7 +534,12 @@ async def filesupload(files: List[UploadFile]):
         exc_traceback = traceback.format_exc()
 
         return {'message': 'nok',
-                'msg': f"Error uploading the file(s): Type:: {exc_type} :: Exception:: {exc} :: Traceback:: {exc_traceback} :: file:: {file.filename} :: directory:: {directory} :: prefix:: {prefix}"}  # noqa: E501
+                'msg': f"Error uploading the file(s): \
+                Type:: {exc_type} :: Exception:: {exc} :: \
+                Traceback:: {exc_traceback} :: \
+                file:: {file.filename} :: \
+                directory:: {directory} :: \
+                prefix:: {prefix}"}  # noqa: E501
 
 
 async def publishnewfile(filename):
@@ -553,7 +561,8 @@ async def publishnewfile(filename):
     publish_message('10.5.0.4', 6379, message.channel, jsonstring)
 
     # credentials = pika.PlainCredentials('rabbitmq', 'rabbitmq')
-    # connection = pika.BlockingConnection(pika.ConnectionParameters('10.5.0.8', 5672, '/', credentials))  # noqa: E501
+    # connection = pika.BlockingConnection(pika.ConnectionParameters
+    #   ('10.5.0.8', 5672, '/', credentials))  # noqa: E501
     # channel = connection.channel()
     # channel.queue_declare(queue='newfile')
     # jsonstring = json.dumps(message.__dict__)
@@ -617,6 +626,7 @@ def transactions(
                 strftime('%m-%d-%Y %H:%M:%S'),
                 "customeraccount": document["customeraccount"],
                 "amount": document["amount"],
+                "currency": document.get('currency', 'usd'),
                 "merchant": document["merchant"],
                 "cxname": document["cxname"],
                 "routing": document["routing"],

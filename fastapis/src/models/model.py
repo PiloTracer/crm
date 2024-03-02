@@ -252,6 +252,7 @@ class PullTrxEcheck:
     """Core Transaction Data"""
     customeraccount: str = None
     amount: float = None
+    currency: str = None
     cxname: str = None
     routing: str = None
     bankaccount: str = None
@@ -270,6 +271,7 @@ class TrxRowEcheck(PullTrxEcheck):
         self,
         customeraccount,
         amount,
+        currency,
         cxname,
         routing,
         bankaccount,
@@ -295,6 +297,7 @@ class TrxRowEcheck(PullTrxEcheck):
     ):
         self.customeraccount: str = customeraccount
         self.amount: float = amount
+        self.currency: str = currency
         self.cxname: str = cxname
         self.routing: str = routing
         self.bankaccount: str = bankaccount
@@ -325,6 +328,7 @@ class TrxRowEcheck(PullTrxEcheck):
         return {
             'customeraccount': self.customeraccount,
             'amount': self.amount,
+            'currency': self.currency,
             'cxname': self.cxname,
             'routing': self.routing,
             'bankaccount': self.bankaccount,
@@ -361,6 +365,7 @@ class TrxRowEcheckId(TrxRowEcheck):
         self,
         customeraccount,
         amount,
+        currency,
         cxname,
         routing,
         bankaccount,
@@ -388,6 +393,7 @@ class TrxRowEcheckId(TrxRowEcheck):
         super().__init__(
             customeraccount,
             amount,
+            currency,
             cxname,
             routing,
             bankaccount,
@@ -419,6 +425,7 @@ class TrxRowEcheckId(TrxRowEcheck):
         d = {
             'customeraccount': self.customeraccount,
             'amount': self.amount,
+            'currency': self.currency,
             'cxname': self.cxname,
             'routing': self.routing,
             'bankaccount': self.bankaccount,

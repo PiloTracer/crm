@@ -80,6 +80,7 @@ export type Transaction = {
   "_id": string,
   "customeraccount": string,
   "amount": number,
+  "currency": string,
   "fees": number,
   "cxname": string,
   "routing": string,
@@ -136,6 +137,7 @@ export async function UpdateTransactionFnc<Transaction>(requestdata: RequestData
   }
 }
 
+
 export async function CreateTransactionFnc<Transaction>(requestdata: RequestCreate) {
   console.log(requestdata);
   let data: any;
@@ -164,7 +166,7 @@ export async function CreateTransactionFnc<Transaction>(requestdata: RequestCrea
 
   } finally {
     console.log("received data: ", data);
-    return data?.doc as Transaction;
+    return data as Transaction;
   }
 }
 

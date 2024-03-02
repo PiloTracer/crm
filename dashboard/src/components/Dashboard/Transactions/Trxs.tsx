@@ -148,7 +148,6 @@ const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
       },
       {
         accessorKey: "merchant",
-
         header: "Merchant",
         editVariant: 'select',
         enableEditing: ["owner"].includes(role) && isCreating,
@@ -213,6 +212,27 @@ const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
          return true; // default to true if no condition is met
        },
        filterValue: (row: any) => parseFloat(row.amount), */
+      },
+      {
+        accessorKey: "currency",
+        header: "Curr",
+        editVariant: 'select',
+        enableEditing: isCreating,
+        editSelectOptions: [
+          "usd"
+        ],
+        muiEditTextFieldProps: {
+          required: false,
+          error: !!validationErrors?.currency,
+          helperText: validationErrors?.currency,
+          //remove any previous validation errors when transaction focuses on the input
+          onFocus: () =>
+            setValidationErrors({
+              ...validationErrors,
+              reson: undefined,
+            }),
+          //optionally add validation checking for onBlur or onChange
+        }
       },
       {
         accessorKey: "fees",
@@ -471,8 +491,8 @@ const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
     table,
   }: RenderEditRowDialogContentDefProps) => {
     const hiddenComponents = isCreating
-      ? ["status", "descriptor", "reference", "reason", "fees"]
-      : ["trxtype", "routing", "bankaccount", "accounttype", "email", "address"];
+      ? (["owner"].includes(role) ? ["status", "descriptor", "reference", "reason", "fees"] : ["status", "descriptor", "reference", "reason", "fees", "merchant"])
+      : ["trxtype", "routing", "bankaccount", "accounttype", "email", "address", "merchant"];
 
     // Filter out components based on the hiddenComponents array
     const filteredEditComponents = internalEditComponents.filter((component) => {
@@ -714,7 +734,7 @@ function useCreateTransaction(
         method: "netcashach",
         created_by: id,
         created_merchant: merchant,
-        merchant: transaction.merchant,
+        merchant: ["owner"].includes(role) ? transaction.merchant : merchant,
         message: null,
         origen: "main"
       };
@@ -930,6 +950,11 @@ const TransactionsGrid: React.FC<UserProps> = ({ mactive }) => (
 
 export default TransactionsGrid;
 
+function isValidAmountString(data: string): boolean {
+  const parsedNumber = parseFloat(data);
+  return !isNaN(parsedNumber) && parsedNumber >= 0;
+}
+
 const validateRequired = (value: string) => !!value.length;
 
 function validateTransaction(transaction: Transaction) {
@@ -953,5 +978,11 @@ function validateTransaction(transaction: Transaction) {
 
 function validateTransactionCreate(transaction: Transaction) {
   return {
+    customeraccount: !validateRequired(transaction.customeraccount) ?
+      'Customer Account is Required' : '',
+    amount: !isValidAmountString(String(transaction.amount)) ?
+      'Amount is Not Valid' : '',
+    currency: !validateRequired(transaction.currency) ?
+      'Currency is Required' : '',
   };
 }
