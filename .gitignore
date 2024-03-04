@@ -11,7 +11,7 @@ tmp_*
 rabbitmq/data/*
 docker.ini
 custom.ini
-#couchdb/
+couchdb/
 rabbitmq/
 rabbitmq.conf/
 redis_data/
