@@ -27,7 +27,7 @@ export const consts = {
 export function getWebSocketUrl(): string {
   const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
   const port = '4500'; // Define the port if it's different from the hostname's port
-  const protocol = hostname === 'localhost' ? 'ws' : 'wss'; // Use wss for secure WebSocket if not localhost
+  const protocol = hostname === 'localhost' ? 'ws' : 'ws'; // Use wss for secure WebSocket if not localhost
 
   return `${protocol}://${hostname}:${port}/ws`;
 }
