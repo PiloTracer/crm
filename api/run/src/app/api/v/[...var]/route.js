@@ -80,6 +80,7 @@ export async function POST(
             let hash = crypto.createHash('sha1').update(hashraw).digest('hex');
             if (hash != j.authentication.checksum) {
                 throw Error("Error sending data: Validation failed");
+                //throw Error("Error sending data: Validation failed: " + hash + "/" + j.authentication.checksum + "/" + hashraw);
             }
         } else {
             throw Error("Wrong request " + apiauth.apitoken + "  " + apikey + "  " + apiauth.message);
@@ -88,7 +89,7 @@ export async function POST(
         j.transaction = lowercaseObject(j.transaction);
 
         const data = {
-            id: apiauth.merchant + "_" + j.transaction.id,
+            _id: apiauth.merchant + "_" + j.transaction.id,
             authchecksum: j.authentication.checksum,
             authemail: j.authentication.email,
             customeraccount: j.transaction.customeraccount,

@@ -7,21 +7,24 @@ from models.classes import UserClass, UserPwdClass
 
 async def save_message_user(dbu: Server,
                             new: UserPwdClass,
-                            tokenusr: UserClass) -> MessageUser:
+                            tokenusr: UserClass,
+                            src: str) -> MessageUser:
     """Save a user message to the database."""
-    new.id = new.username
+    new.id = f'{new.username.lower()}'
     new.type = "user"
-    new.created = time.time()
-    doc = dbu.get(new.created_by)
+    new.createds = time.time()
+    ok = src == "direct"
 
-    ok = await validate_request(
-        tokenusr=tokenusr,
-        udoc=doc)
+    if ok is False:
+        doc = dbu.get(new.created_by)
+        ok = await validate_request(
+            tokenusr=tokenusr,
+            udoc=doc)
 
     if ok:
         # pylint: disable=unused-variable
         doc_id, doc_rev = dbu.save(
-            new.__dict__)
+            new.to_dict())
         new.id = doc_id
         new.password = ""
         new.message = "ok"
@@ -46,7 +49,8 @@ def get_message_login(db: Server, user: UserLoginSchema) -> UserClass:
     retrieved = db.get(user.username.lower())
     myuser = UserClass()
     try:
-        if retrieved and retrieved['password'] == user.password and retrieved['active']:
+        if retrieved and retrieved['password'] == user.password \
+                and retrieved['active']:
             # myuser = UserClass(**retrieved)
             myuser = UserClass(**retrieved)
             myuser.msg = "The credentials are valid"

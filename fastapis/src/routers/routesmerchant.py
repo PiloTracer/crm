@@ -4,6 +4,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from couchdb import Server
 from dependencies.get_db import get_dbmerchant
+from helper.counter import counter_next
 from helper.merchants import merchant_is_active, processor_is_active
 from models.modelmerch import MerchFeeModel, MerchModel, MerchProcessorModel
 
@@ -75,15 +76,18 @@ async def createprocessor(
             myproc = dbm.get(processor.id)
             if myproc is not None and myproc["active"]:
                 myproc["active"] = False
+                myproc["modifieds"] = time.time()
                 dbm.save(myproc)
                 detail += "deactivated - "
         else:
-            processor.created = time.time()
             results = dbm.view('Merchant/vNewestFees',
                                startkey=[processor.merchant,
                                          processor.processor, True],
                                endkey=[processor.merchant,
                                        processor.processor, True])
+            processor.id = \
+                f'{processor.merchant}_{processor.processor}_{
+                    counter_next("counter_proc")}'
 
             # Print the most recent document for the additional key
             if len(results.rows) > 0:
@@ -95,7 +99,6 @@ async def createprocessor(
                 detail += "deactivated - "
 
             newdoc = processor.to_dict()
-            newdoc.pop('_id', None)
             newdoc["active"] = True
 
             dbm.save(newdoc)
@@ -133,7 +136,6 @@ async def createfee(
         #
         # 2. A normal request to create a new fee:
         else:
-            fee.created = time.time()
             results = dbm.view('Merchant/vNewestFees',
                                startkey=[fee.merchant,
                                          fee.processor,
@@ -142,9 +144,10 @@ async def createfee(
                                          True],
                                endkey=[fee.merchant, fee.processor,
                                        fee.ftype, fee.fname, True])
-
+            fee.id = \
+                f'{fee.merchant}_{fee.processor}_fee_{
+                    counter_next("counter_fee")}'
             newdoc = fee.to_dict()
-            newdoc.pop('_id', None)
             newdoc["active"] = True
             #
             # 2.1 Check if there are previouos definitions
@@ -185,12 +188,14 @@ async def createupdate(
         if doc is None:
             doc = merchant.to_dict()
             doc["_id"] = merchant.id
+            doc["createds"] = time.time()
+            doc["modifieds"] = doc["createds"]
         else:
             doc["_id"] = merchant.id
-            doc["id"] = merchant.id
             doc["email"] = merchant.email
             doc["type"] = merchant.type
             doc["active"] = merchant.active
+            doc["modifieds"] = time.time()
 
         db[merchant.id] = doc
 

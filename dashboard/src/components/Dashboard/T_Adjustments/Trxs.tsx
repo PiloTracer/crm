@@ -136,8 +136,8 @@ const WalletAdjustments: React.FC<UserProps> = ({ mactive }) => {
         Edit: () => null
       },
       {
-        accessorFn: (originalRow) => new Date(originalRow.created * 1000), //convert to date for sorting and filtering
-        id: 'created',
+        accessorFn: (originalRow) => new Date(originalRow.createds * 1000), //convert to date for sorting and filtering
+        id: 'createds',
         header: 'Date',
         enableEditing: false,
         filterVariant: 'datetime-range',
@@ -171,7 +171,7 @@ const WalletAdjustments: React.FC<UserProps> = ({ mactive }) => {
       {
         accessorKey: "amnt",
         header: "Amount",
-        enableEditing: false,
+        enableEditing: role == "owner",
         muiTableBodyCellProps: {
           align: 'right',
         },
@@ -480,7 +480,7 @@ const WalletAdjustments: React.FC<UserProps> = ({ mactive }) => {
       },
       sorting: [
         {
-          id: 'created',
+          id: 'createds',
           desc: true
         }
       ],
@@ -682,7 +682,7 @@ function useCreateTransaction(
         created: {
           id: id,
           merchant: merchant,
-          created: 0
+          createds: 0
         },
         status: {
           status: "failed",

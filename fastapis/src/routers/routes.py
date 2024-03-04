@@ -6,7 +6,6 @@ from typing import List
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import APIRouter, Depends, HTTPException, status
 from couchdb import Server
-import redis
 from core.settings import SettingsJWT
 ##########################
 
@@ -41,6 +40,25 @@ def health():
     return {"messages_is_alive": True}
 
 
+@router.post("/user/signup_no_token", tags=["user"])
+async def signup_no_token(
+    user: UserPwdClass,
+    dbu: Server = Depends(get_dbusr)
+) -> UserPwdClass:
+    '''method description'''
+    # current_user: UserClass = await get_current_user(user.token)
+
+    user = await save_message_user(
+        dbu=dbu,
+        new=user,
+        tokenusr=None,
+        src="direct")
+
+    # response = MessageUser()
+    # user.id = doc_id
+    return user
+
+
 @router.post("/user/signup", tags=["user"])
 async def create_user(
     user: UserPwdClass,
@@ -53,7 +71,8 @@ async def create_user(
     user = await save_message_user(
         dbu=dbu,
         new=user,
-        tokenusr=current_user)
+        tokenusr=current_user,
+        src="token")
 
     # response = MessageUser()
     # user.id = doc_id
@@ -213,24 +232,3 @@ async def delete_docs(db_name: str):
     if not success:
         raise HTTPException(status_code=404, detail=message)
     return {"message": message}
-
-
-redis_client = redis.Redis(host='10.5.0.4', port=6379, db=0)
-
-
-@router.get("/counter")
-def counter_next(countid: str) -> int:
-    '''Counter increment'''
-    # Increment and retrieve the counter value
-    counter_value = redis_client.incr(countid)
-    if counter_value > 1000000000:
-        redis_client.set(countid, 0)
-    return int(counter_value)
-
-
-@router.get("/counterleading0")
-def counter_next_leading_0(countid: str) -> str:
-    '''Counter increment with leading 0s'''
-    # Increment and retrieve the counter value
-    counter_value = counter_next(countid)
-    return str(counter_value).zfill(10)

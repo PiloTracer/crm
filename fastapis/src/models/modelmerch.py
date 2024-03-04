@@ -1,33 +1,33 @@
 """class description"""
 # from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel
+import time
+from pydantic import BaseModel, Field
 
 
 class MerchProcessorModel(BaseModel):
     """docstring"""
-    _id: str = None
-    _rev: Optional[str] = None
-    id: str = None
+    id: str = Field(None, alias='_id')
     createdby: str = None
-    created: float = 0
+    createds: float = Field(default_factory=time.time)
     merchant: str = None
     processor: str = None
     family: str = None
     type: str = None
     active: bool = True
+    modifieds: float = createds
 
     def to_dict(self):
         """convert to dict"""
         return {
-            '_id': self._id if self._id and self._id is not None and self._id != "" else self.id,
+            '_id': self.id,
             'createdby': self.createdby,
-            'created': self.created,
+            'createds': self.createds,
             'merchant': self.merchant,
             'processor': self.processor,
             'family': self.family,
             'type': self.type,
-            'active': self.active
+            'active': self.active,
+            'modifieds': self.modifieds
         }
 
 
@@ -50,12 +50,11 @@ class MerchRangeModel(BaseModel):
 
 class MerchFeeModel(BaseModel):
     """docstring"""
-    _id: str = None
-    _rev: Optional[str] = None
-    id: str = None
+    id: str = Field(None, alias='_id')
+    rev: str = Field(None, alias='_rev')
     createdby: str = None
     processor_id: str = None
-    created: float
+    createds: float = Field(default_factory=time.time)
     merchant: str = None
     processor: str = None
     type: str = "f"
@@ -68,10 +67,11 @@ class MerchFeeModel(BaseModel):
     def to_dict(self):
         """convert to dict"""
         return {
-            '_id': self._id if self._id and self._id is not None and self._id != "" else self.id,
+            '_id': self.id,
+            '_rev': self.rev,
             'createdby': self.createdby,
             'processor_id': self.processor_id,
-            'created': self.created,
+            'createds': self.createds,
             'merchant': self.merchant,
             'processor': self.processor,
             'type': self.type,
@@ -85,36 +85,21 @@ class MerchFeeModel(BaseModel):
 
 class MerchModel(BaseModel):
     """docstring"""
-    _id: str = None
-    _rev: Optional[str] = None
-    id: str = None
+    id: str = Field(None, alias='_id')
+    rev: str = Field(None, alias='_rev')
     email: str = None
     type: str = None
     active: bool = False
-
-    def __init__(
-        self,
-        _id="",  # pylint: disable=redefined-builtin
-        _rev: Optional[str] = None,
-        id=None,  # pylint: disable=redefined-builtin
-        email=None,
-        type=None,  # pylint: disable=redefined-builtin
-        active=False  # pylint: disable=redefined-builtin
-    ):
-        super().__init__()
-        self._id: str = _id
-        self._rev: Optional[str] = _rev,
-        self.id: str = id
-        self.email: str = email
-        self.type: str = type
-        self.active: bool = active
+    createds: float = 0
+    modifieds: float = 0
 
     def to_dict(self):
         """convert to dict"""
         return {
-            '_id': self._id,
-            'id': self.id,
+            '_id': self.id,
             'email': self.email,
             'type': self.type,
-            'active': self.active
+            'active': self.active,
+            'createds': self.createds,
+            'modifieds': self.modifieds
         }

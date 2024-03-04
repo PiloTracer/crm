@@ -5,8 +5,8 @@ from typing import List
 import aiofiles
 from fastapi import UploadFile
 from dependencies.get_db import get_dblogtrx
+from helper.counter import counter_next_leading_0
 from models.modelhelper import LogTrxModel
-from routers.routes import counter_next_leading_0
 
 
 async def write_file_in_chunks(file_path, contents, chunk_size=1024*1024):
@@ -44,7 +44,7 @@ async def save_uploaded_file(file: UploadFile, directory: str, prefix: str) \
         await file.close()
         o_log = LogTrxModel()
         o_log.id = \
-            f'{int(o_log.createds*1000)}_{counter_next_leading_0("uploadredis")}'
+            f'{int(o_log.createds*1000)}_{counter_next_leading_0("counter_upload")}'  # noqa: E501
         o_log.merchant = felements[0]
         o_log.created_merchant = None
         o_log.created_by = None

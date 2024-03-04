@@ -224,7 +224,9 @@ async def transaction_add(
     #
     # Default response message
     request.origen = "customer" if request.origen != "main" else "main"
-    request.authemail = request.created_by
+    request.authemail = \
+        request.authemail if request.origen != "main" \
+        else request.created_by
     message: MessageSchemaRef = MessageSchemaRef(
         status='failed', message='nok', reference=None, error='default error')
 
@@ -344,7 +346,8 @@ def uploads(
             #############################
             #
             #
-            omerch: MerchModel = MerchModel(**dbm.get(merch))
+            m = dbm.get(merch)
+            omerch: MerchModel = MerchModel(**m)
             if omerch is None or omerch.active is False:
                 message.status = 'nok'
                 message.message = "merchant is not active"
@@ -695,12 +698,17 @@ def get_latest_uploads(
 ) -> List[LogTrxModel]:
     '''Get the latest file parse results'''
 
+    results = None
     # http://localhost:6984/w_log_trx/_design/logtrx/_view/lastuploads?startkey=["cliente",{}]&endkey=["cliente"]&include_docs=true&descending=true
     results = dblogtrx.view('logtrx/lastuploads',
                             startkey=[mrequest.merchant, {}],
                             endkey=[mrequest.merchant],
                             descending=True,
-                            include_docs=True)
+                            include_docs=True) \
+        if mrequest.merchant != "*" \
+        else dblogtrx.view('logtrx/lastuploads',
+                           descending=True,
+                           include_docs=True)
 
     documents = [row.doc for row in results.rows]
 

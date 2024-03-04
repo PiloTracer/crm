@@ -8,7 +8,7 @@ class BalanceCreatedModel(BaseModel):
     """Creation data for Balance Trx"""
     id: str | None = ""
     merchant: str | None = ""
-    created: float = 0
+    createds: float = 0
     createdf: int = 0
 
 

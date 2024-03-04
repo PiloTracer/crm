@@ -1,4 +1,5 @@
 """Module providing a class to parse data."""
+import time
 from typing import Optional
 from pydantic import BaseModel, Field
 
@@ -47,7 +48,8 @@ class UserClass(BaseModel):
     merchant: Optional[str] = None
     active: Optional[bool] = False
     message: Optional[str] = None
-    created: Optional[float] = None
+    createds: float = Field(default_factory=time.time)
+    modifieds: float = Field(default_factory=time.time)
     created_by: Optional[str] = None
     created_merchant: Optional[str] = None
     token: Optional[str] = None
@@ -61,10 +63,13 @@ class UserClass(BaseModel):
             'role': self.role,
             'fullname': self.fullname,
             'username': self.username,
+            'msg': self.msg,
+            'err': self.err,
             'merchant': self.merchant,
             'active': self.active,
             'message': self.message,
-            'created': self.created,
+            'createds': self.createds,
+            'modifieds': self.modifieds,
             'created_by': self.created_by,
             'created_merchant': self.created_merchant,
             'token': self.token
@@ -83,7 +88,8 @@ class UserClass(BaseModel):
             merchant=data.get('merchant'),
             active=data.get('active'),
             message=data.get('message'),
-            created=data.get('created'),
+            createds=data.get('createds'),
+            modifieds=data.get('modifieds'),
             created_by=data.get('created_by'),
             created_merchant=data.get('created_merchant')
         )
@@ -112,7 +118,8 @@ class UserPwdClass(UserClass):
             'password': self.password,
             'active': self.active,
             'message': self.message,
-            'created': self.created,
+            'createds': self.createds,
+            'modifieds': self.modifieds,
             'created_by': self.created_by,
             'created_merchant': self.created_merchant
         }
@@ -131,7 +138,8 @@ class UserPwdClass(UserClass):
             password=data.get('password'),
             active=data.get('active'),
             message=data.get('message'),
-            created=data.get('created'),
+            createds=data.get('createds'),
+            modifieds=data.get('modifieds'),
             created_by=data.get('created_by'),
             created_merchant=data.get('created_merchant')
         )
@@ -155,7 +163,7 @@ class UserApiClass(UserClass):
             'password': self.password,
             'active': self.active,
             'message': self.message,
-            'created': self.created,
+            'createds': self.createds,
             'created_by': self.created_by,
             'created_merchant': self.created_merchant,
             'apitoken': self.apitoken,
@@ -176,7 +184,7 @@ class UserApiClass(UserClass):
             password=data.get('password'),
             active=data.get('active'),
             message=data.get('message'),
-            created=data.get('created'),
+            createds=data.get('createds'),
             created_by=data.get('created_by'),
             created_merchant=data.get('created_merchant'),
             apitoken=data.get('apitoken'),

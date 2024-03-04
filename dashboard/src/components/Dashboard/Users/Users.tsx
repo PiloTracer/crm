@@ -586,7 +586,7 @@ function useCreateTransaction(
         merchant: transaction.merchant,
         active: transaction.active,
         message: null,
-        created: 0,
+        createds: 0,
         created_by: id,
         created_merchant: merchant,
         err: null

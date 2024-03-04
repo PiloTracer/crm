@@ -569,9 +569,18 @@ const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
         <Box
           sx={{
             display: 'grid',
-            margin: 'auto',
-            gridTemplateColumns: '1fr 1fr',
+            margin: '0px',
+            gridTemplateColumns: '1fr 1fr 1fr', // Three equal columns
+            gap: '0px', // Optional gap between columns
             width: '100%',
+            '& > *': {
+              borderBottom: '1px solid rgba(81, 81, 81, 1)', // Horizontal gridlines
+              borderRight: '1px solid rgba(81, 81, 81, 1)', // Vertical gridlines
+              padding: '2px', // Optional padding
+            },
+            '& > :nth-of-type(3n)': { // Target every 3rd element (rightmost in each row)
+              borderRight: 'none',
+            },
           }}
         >
           <Typography>Routing: {row.original.routing}</Typography>

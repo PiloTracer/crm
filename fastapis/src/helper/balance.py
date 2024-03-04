@@ -124,7 +124,7 @@ async def reverse_balance_trx(
             doc.pop("_rev", None)
             doc["created"]["id"] = request.username
             doc["created"]["merchant"] = request.merchant
-            doc["created"]["created"] = time.time()
+            doc["created"]["createds"] = time.time()
             doc["created"]["createdf"] = \
                 datetime.now().strftime('%Y%m%d%H%M%S')
             doc["status"]["amntsign"] *= -1
@@ -201,7 +201,7 @@ async def create_balance_trx(
         ######################
         #
         # created
-        balance.created.created = time.time()
+        balance.created.createds = time.time()
         balance.created.createdf = datetime.now().strftime('%Y%m%d%H%M%S')
         # status:
         balance.status.status = "approved"

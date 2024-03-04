@@ -65,7 +65,7 @@ export class TrxPromise<T> extends Promise<T>{
   parent: string = "";
   type: string = "";
   method: string = "";
-  created: string = "";
+  createds: number = 0;
   createdf: string = "";
   modified: string = "";
   merchant: string = "";
@@ -92,7 +92,7 @@ export type Transaction = {
   "parent": string,
   "type": string,
   "method": string,
-  "created": string,
+  "createds": number,
   "createdf": string,
   "modified": string,
   "merchant": string,

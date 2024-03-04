@@ -13,8 +13,8 @@ export function validateData(data) {
     }
 
     // Check "id" for a maximum of 32 characters
-    if (typeof data.id !== 'string' || data.id.length > 32) {
-        errors.id = 'ID must be a string with a maximum of 32 characters.';
+    if (typeof data._id !== 'string' || data._id.length > 32) {
+        errors._id = 'ID must be a string with a maximum of 32 characters.';
     }
 
     // Check "customeraccount" for a maximum of 20 characters

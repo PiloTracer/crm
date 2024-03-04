@@ -11,7 +11,7 @@ export type User = {
   err: string | null,
   merchant: string,
   active: boolean,
-  created: number | null,
+  createds: number | null,
   created_by: string | null,
   created_merchant: string | null
 }

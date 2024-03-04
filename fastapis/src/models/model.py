@@ -1,5 +1,6 @@
 """class description"""
 from datetime import datetime
+import time
 from typing import Optional, List
 from pydantic import BaseModel, Field
 
@@ -154,6 +155,8 @@ class TrxUpdateSchema(TrxUpdateBaseSchema):
     merchant: Optional[str] = None
     by_merchant: Optional[str] = None
     created: int = int(datetime.now().strftime('%Y%m%d%H%M%S'))
+    createds: float = Field(default_factory=time.time)
+    modifieds: float = Field(default_factory=time.time)
     completed: bool = False
     transaction: Optional[TrxUpdateExtraBaseSchema] = None
 
@@ -166,6 +169,8 @@ class TrxUpdateSchema(TrxUpdateBaseSchema):
             'merchant': self.merchant,
             'by_merchant': self.by_merchant,
             'created': self.created,
+            'createds': self.createds,
+            'modifieds': self.modifieds,
             'completed': self.completed,
             'status': self.status,
             'descriptor': self.descriptor,
@@ -252,7 +257,6 @@ class PullTrxEcheck:
     """Core Transaction Data"""
     customeraccount: str = None
     amount: float = None
-    currency: str = None
     cxname: str = None
     routing: str = None
     bankaccount: str = None
@@ -262,6 +266,7 @@ class PullTrxEcheck:
     trxtype: str = None
     fees: float = 0
     origen: str = None
+    currency: str = None
 
 
 class TrxRowEcheck(PullTrxEcheck):
@@ -271,7 +276,6 @@ class TrxRowEcheck(PullTrxEcheck):
         self,
         customeraccount,
         amount,
-        currency,
         cxname,
         routing,
         bankaccount,
@@ -293,11 +297,11 @@ class TrxRowEcheck(PullTrxEcheck):
         reference=None,
         reason=None,
         comment=None,
-        origen=None
+        origen=None,
+        currency=None
     ):
         self.customeraccount: str = customeraccount
         self.amount: float = amount
-        self.currency: str = currency
         self.cxname: str = cxname
         self.routing: str = routing
         self.bankaccount: str = bankaccount
@@ -321,6 +325,7 @@ class TrxRowEcheck(PullTrxEcheck):
         self.reason: str = reason
         self.comment: str = comment
         self.origen: str = origen
+        self.currency: str = currency
 
     def to_dict(self):
         """convert to dict"""
@@ -365,7 +370,6 @@ class TrxRowEcheckId(TrxRowEcheck):
         self,
         customeraccount,
         amount,
-        currency,
         cxname,
         routing,
         bankaccount,
@@ -388,12 +392,12 @@ class TrxRowEcheckId(TrxRowEcheck):
         reason=None,
         comment=None,
         origen=None,
+        currency=None,
         id=None  # pylint: disable=redefined-builtin
     ):
         super().__init__(
             customeraccount,
             amount,
-            currency,
             cxname,
             routing,
             bankaccount,
@@ -415,7 +419,8 @@ class TrxRowEcheckId(TrxRowEcheck):
             reference,
             reason,
             comment,
-            origen
+            origen,
+            currency
         )
         self.id: str = id
 

@@ -23,7 +23,7 @@ export type Transaction = {
   amntsign: number | 0,
   feesign: number | 0,
   totsign: number | 0,
-  created: number | 0,
+  createds: number | 0,
   status: string | "",
   channel: string | "",
   message: string | "",
@@ -53,7 +53,7 @@ export type AdjustmentData = {
   created: {
     id: string,
     merchant: string,
-    created: number | null
+    createds: number | null
   },
   status: { 
     status : string,
