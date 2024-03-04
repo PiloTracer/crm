@@ -36,7 +36,6 @@ async def get_merchants_active(
 
     # Extract documents from the view result
     activemerchants = [row.value for row in view_result]
-    activemerchants += ["*"]
 
     return activemerchants
 

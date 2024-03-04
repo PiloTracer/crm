@@ -23,7 +23,7 @@ import {
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { mkConfig, generateCsv, download } from 'export-to-csv'; //or use your library of choice here
 import axios from 'axios';
-import { UploadLogs } from '@/components/DbFunctions/UploadLogs'
+import { UploadLogs, ExtraDetails, ErrorDetails } from '@/components/DbFunctions/UploadLogs'
 import { useSession } from 'next-auth/react';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -138,9 +138,10 @@ const UploadResultsTable: React.FC = () => {
         enableEditing: false,
         Edit: () => null,
         Cell: ({ cell }) => {
-          const extra = cell.getValue();
+          const extra = cell.getValue() as ExtraDetails;
 
-          if (extra && typeof extra === 'object') {
+          if (extra &&
+            typeof extra === 'object') {
             return (
               <ul>
                 {extra.message && <li>{extra.message}</li>}
