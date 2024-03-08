@@ -58,7 +58,7 @@ const SignIn: React.FC = () => {
 
     console.log(res);
 
-    //router.push(`/auth/signin/callbackUrl=${router.query.callbackUrl ?? "/"}`);
+    //router.push(`/auth/signin/callbackUrl=${router.query.callbackUrl ?? "/dashboard"}`);
     router.push(router.query.callbackUrl ? decodeURIComponent(router.query.callbackUrl as string) : '/');
   };
 
