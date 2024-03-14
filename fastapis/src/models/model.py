@@ -2,7 +2,247 @@
 from datetime import datetime
 import time
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator, ValidationError
+
+from config.netcashach_config import LENGTHS, REGEXES
+
+
+class UserApiTrxSchema(BaseModel):
+    """Basic Schema to receive a new Transaction via API"""
+    id: Optional[str] = Field(None, alias='_id')
+    authchecksum: Optional[str] = None
+    authemail: Optional[str] = None
+    customeraccount: str
+    amount: float
+    currency: str
+    fees: float = 0
+    cxname: str
+    routing: str
+    bankaccount: str
+    accounttype: str
+    email: str
+    address: str
+    trxtype: Optional[str] = None
+    parent: Optional[str] = None
+    type: Optional[str] = None
+    merchant: str
+    comment: Optional[str] = None
+    method: str
+    version: str = "0"
+    apikey: Optional[str] = None
+    origen: Optional[str] = None
+    created_by: Optional[str] = None
+    created_merchant: Optional[str] = None
+
+    @validator('authemail', pre=True)
+    # pylint: disable = no-self-argument
+    def lowercase_authemail(cls, value):
+        '''Convert authemail to lowercase'''
+        if value is not None:
+            value = value.lower()
+        return value
+
+    @validator('authemail')
+    # pylint: disable = no-self-argument
+    def validate_authemail(cls, value):
+        '''Validate Authenticate Email'''
+        if value is not None:
+            if not REGEXES["email"].match(value):
+                raise ValidationError('Invalid authemail')
+            if len(value) > LENGTHS["email"]:
+                raise ValidationError(
+                    f'authemail must be less than {
+                        LENGTHS["email"]} characters')
+        return value
+
+    @validator('customeraccount', pre=True)
+    # pylint: disable = no-self-argument
+    def lowercase_customeraccount(cls, value):
+        '''Convert customeraccount to lowercase'''
+        if value is not None:
+            value = value.lower()
+        return value
+
+    @validator('customeraccount')
+    # pylint: disable = no-self-argument
+    def validate_customeraccount(cls, value):
+        '''Validate Customer Account'''
+        if value is not None:
+            if not REGEXES["customeraccount"].match(value):
+                raise ValidationError('Invalid customeraccount')
+            if len(value) > LENGTHS["customeraccount"]:
+                raise ValidationError(
+                    f'customeraccount must be less than {
+                        LENGTHS["customeraccount"]} characters')
+        return value
+
+    @validator('amount')
+    # pylint: disable = no-self-argument
+    def validate_amount(cls, value):
+        '''Validate Amount'''
+        if value is not None:
+            if not REGEXES["amount"].match(str(value)):
+                raise ValidationError('Invalid amount')
+            if len(str(value)) > LENGTHS["cxname"]:
+                raise ValidationError(
+                    f'amount must be less than {
+                        LENGTHS["amount"]} characters')
+        return value
+
+    @validator('cxname', pre=True)
+    # pylint: disable = no-self-argument
+    def lowercase_cxname(cls, value):
+        '''Convert cxname to lowercase'''
+        if value is not None:
+            value = value.lower()
+        return value
+
+    @validator('cxname')
+    # pylint: disable = no-self-argument
+    def validate_cxname(cls, value):
+        '''Validate Customer Name'''
+        if value is not None:
+            if not REGEXES["cxname"].match(value):
+                raise ValidationError('Invalid cxname')
+            if len(value) > LENGTHS["cxname"]:
+                raise ValidationError(
+                    f'cxname must be less than {
+                        LENGTHS["cxname"]} characters')
+        return value
+
+    @validator('routing', pre=True)
+    # pylint: disable = no-self-argument
+    def lowercase_routing(cls, value):
+        '''Convert routing to lowercase'''
+        if value is not None:
+            value = value.lower()
+        return value
+
+    @validator('routing')
+    # pylint: disable = no-self-argument
+    def validate_routing(cls, value):
+        '''Validate routing'''
+        if value is not None:
+            if not REGEXES["routing"].match(value):
+                raise ValidationError('Invalid routing')
+            if len(value) > LENGTHS["routing"]:
+                raise ValidationError(
+                    f'routing must be less than {
+                        LENGTHS["routing"]} characters')
+        return value
+
+    @validator('bankaccount', pre=True)
+    # pylint: disable = no-self-argument
+    def lowercase_bankaccount(cls, value):
+        '''Convert bankaccount to lowercase'''
+        if value is not None:
+            value = value.lower()
+        return value
+
+    @validator('bankaccount')
+    # pylint: disable = no-self-argument
+    def validate_bankaccount(cls, value):
+        '''Validate bankaccount number'''
+        if value is not None:
+            if not REGEXES["bankaccount"].match(value):
+                raise ValidationError('Invalid bankaccount')
+            if len(value) > LENGTHS["bankaccount"]:
+                raise ValidationError(
+                    f'bankaccount must be less than {
+                        LENGTHS["bankaccount"]} characters')
+        return value
+
+    @validator('accounttype', pre=True)
+    # pylint: disable = no-self-argument
+    def lowercase_accounttype(cls, value):
+        '''Convert accounttype to lowercase'''
+        if value is not None:
+            value = value.lower()
+        return value
+
+    @validator('accounttype')
+    # pylint: disable = no-self-argument
+    def validate_accounttype(cls, value):
+        '''Validate accounttype'''
+        if value is not None:
+            if not REGEXES["accounttype"].match(value):
+                raise ValidationError('Invalid accounttype')
+            if len(value) > LENGTHS["accounttype"]:
+                raise ValidationError(
+                    f'accounttype must be less than {
+                        LENGTHS["accounttype"]} characters')
+        return value
+
+    @validator('email', pre=True)
+    # pylint: disable = no-self-argument
+    def lowercase_email(cls, value):
+        '''Convert email to lowercase'''
+        if value is not None:
+            value = value.lower()
+        return value
+
+    @validator('email')
+    # pylint: disable = no-self-argument
+    def validate_email(cls, value):
+        '''Validate email'''
+        if value is not None:
+            if not REGEXES["email"].match(value):
+                raise ValidationError('Invalid email')
+            if len(value) > LENGTHS["email"]:
+                raise ValidationError(
+                    f'email must be less than {
+                        LENGTHS["email"]} characters')
+        return value
+
+    @validator('address', pre=True)
+    # pylint: disable = no-self-argument
+    def lowercase_address(cls, value):
+        '''Convert address to lowercase'''
+        if value is not None:
+            value = value.lower()
+        return value
+
+    @validator('address')
+    # pylint: disable = no-self-argument
+    def validate_address(cls, value):
+        '''Validate address'''
+        if value is not None:
+            if not REGEXES["address"].match(value):
+                raise ValidationError('Invalid address')
+            if len(value) > LENGTHS["address"]:
+                raise ValidationError(
+                    f'address must be less than {
+                        LENGTHS["address"]} characters')
+        return value
+
+    @validator('trxtype', pre=True)
+    # pylint: disable = no-self-argument
+    def lowercase_trxtype(cls, value):
+        '''Convert trxtype to lowercase'''
+        if value is not None:
+            value = value.lower()
+        return value
+
+    @validator('trxtype')
+    # pylint: disable = no-self-argument
+    def validate_trxtype(cls, value):
+        '''Validate trxtype'''
+        if value is not None:
+            if not REGEXES["trxtype"].match(value):
+                raise ValidationError('Invalid trxtype')
+            if len(value) > LENGTHS["trxtype"]:
+                raise ValidationError(
+                    f'trxtype must be less than {
+                        LENGTHS["trxtype"]} characters')
+        return value
+
+    class Config:  # pylint: disable= missing-class-docstring
+        validate_assignment = True
+        allow_population_by_field_name = True
+
+    def to_dict(self):
+        """convert to dict"""
+        return self.model_dump(by_alias=True, exclude_none=True)
 
 
 class MessageGeneralSchema(BaseModel):
@@ -31,7 +271,7 @@ class MessageSchemaRef(MessageSchema):
 
 
 class UserLoginSchema(BaseModel):
-    """docstring"""
+    """User login schema"""
     username: str
     password: str
 
@@ -40,64 +280,6 @@ class UserApiEmailSchema(BaseModel):
     """Basic Schema to receive an email element"""
     email: str
     apitoken: str
-
-
-class UserApiTrxSchema(BaseModel):
-    """Basic Schema to receive a new Transaction via API"""
-    id: Optional[str] = Field(None, alias='_id')
-    authchecksum: Optional[str] = None
-    authemail: Optional[str] = None
-    customeraccount: str
-    amount: str
-    currency: str
-    fees: Optional[float] = 0
-    cxname: str
-    routing: str
-    bankaccount: str
-    accounttype: str
-    email: str
-    address: str
-    trxtype: Optional[str] = None
-    parent: Optional[str] = None
-    type: Optional[str] = None
-    merchant: str
-    comment: Optional[str] = None
-    method: str
-    version: Optional[str] = "0"
-    apikey: Optional[str] = None
-    origen: Optional[str] = None
-    created_by: Optional[str] = None
-    created_merchant: Optional[str] = None
-
-    def to_dict(self):
-        """convert to dict"""
-        # Convert the object to a dictionary for storing in CouchDB
-        return {
-            'id': self.id,
-            'authchecksum': self.authchecksum,
-            'authemail': self.authemail,
-            'customeraccount': self.customeraccount,
-            'amount': self.amount,
-            'currency': self.currency,
-            'fees': self.fees,
-            'cxname': self.cxname,
-            'routing': self.routing,
-            'bankaccount': self.bankaccount,
-            'accounttype': self.accounttype,
-            'email': self.email,
-            'address': self.address,
-            'trxtype': self.trxtype,
-            'parent': self.parent,
-            'type': self.type,
-            'merchant': self.merchant,
-            'comment': self.comment,
-            'method': self.method,
-            'version': self.version,
-            'apikey': self.apikey,
-            'origen': self.origen,
-            'created_by': self.created_by,
-            'created_merchant': self.created_merchant
-        }
 
 
 class UserApiCreate(BaseModel):
@@ -141,65 +323,46 @@ class TrxUpdateExtraBaseSchema(BaseModel):
 
 
 class TrxUpdateBaseSchema(BaseModel):
-    """docstring"""
+    """Base schema for transaction updates"""
     id: Optional[str] = None
-    status:     str
+    status: str
     descriptor: Optional[str] = None
-    reference:  Optional[str] = None
-    reason:     Optional[str] = None
+    reference: Optional[str] = None
+    reason: Optional[str] = None
 
 
 class TrxUpdateSchema(TrxUpdateBaseSchema):
-    """docstring"""
+    """Schema for transaction updates"""
     username: Optional[str] = None
     merchant: Optional[str] = None
     by_merchant: Optional[str] = None
-    created: int = int(datetime.now().strftime('%Y%m%d%H%M%S'))
+    created: int = Field(default_factory=lambda: int(
+        datetime.now().strftime('%Y%m%d%H%M%S')))
     createds: float = Field(default_factory=time.time)
     modifieds: float = Field(default_factory=time.time)
     completed: bool = False
     transaction: Optional[TrxUpdateExtraBaseSchema] = None
 
+    class Config:  # pylint: disable= missing-class-docstring
+        orm_mode = True
+
     def to_dict(self):
-        """convert TrxUpdateSchema to dict"""
-        # Convert the object to a dictionary for storing in CouchDB
-        return {
-            'id': self.id,
-            'username': self.username,
-            'merchant': self.merchant,
-            'by_merchant': self.by_merchant,
-            'created': self.created,
-            'createds': self.createds,
-            'modifieds': self.modifieds,
-            'completed': self.completed,
-            'status': self.status,
-            'descriptor': self.descriptor,
-            'reference': self.reference,
-            'reason': self.reason,
-            'transaction': {
-                'type': self.transaction.type,
-                'context': self.transaction.context,
-                'trxtype': self.transaction.trxtype,
-                'amnt': self.transaction.amnt,
-                'fees': self.transaction.fees,
-                'description': self.transaction.description,
-                'target': self.transaction.target,
-                'origen': self.transaction.origen,
-                'currency': self.transaction.currency,
-                'method': self.transaction.method,
-                'channel': self.transaction.channel
-            }
-        }
+        """Convert TrxUpdateSchema to dict"""
+        data = self.model_dump(exclude_none=True)
+        if self.transaction:
+            data['transaction'] = self.transaction.model_dump(
+                exclude_none=True)
+        return data
 
 
 class MessageUser(BaseModel):
-    """docstring"""
+    """Message user schema"""
     id: str = ""
     access_token: str = None
 
 
 class TrxHeadEcheck(BaseModel):
-    """docstring"""
+    """Transaction head for echeck"""
     id: Optional[str] = ""
     type: Optional[str] = ""
     method: Optional[str] = ""
@@ -214,7 +377,6 @@ class TrxHeadEcheck(BaseModel):
     size: Optional[int] = 0
     count: Optional[int] = 0
     duplicate: Optional[bool] = False
-    total: Optional[float] = 0
     sum: Optional[float] = 0
     createds: Optional[float] = 0
     modifieds: Optional[float] = 0
@@ -223,246 +385,82 @@ class TrxHeadEcheck(BaseModel):
 
     def to_dict(self):
         """convert to dict"""
-        # Convert the object to a dictionary for storing in CouchDB
-        return {
-            '_id': self.id,
-            'type': self.type,
-            'method': self.method,
-            'merchant': self.merchant,
-            'src': self.src,
-            'name': self.name,
-            'ext': self.ext,
-            'path': self.path,
-            'content': self.content,
-            'fullpath': self.fullpath,
-            'other': self.other,
-            'size': self.size,
-            'count': self.count,
-            'duplicate': self.duplicate,
-            'total': self.total,
-            'sum': self.sum,
-            'created': self.created,
-            'modified': self.modified,
-            'createds': self.created,
-            'modifieds': self.modified
-        }
+        return self.model_dump(exclude_none=True)
 
 
 class TrxHeadEcheckList:
-    """docstring"""
+    """List of transaction heads for echeck"""
     list: List[TrxHeadEcheck]
 
 
-class PullTrxEcheck:
+class PullTrxEcheck(BaseModel):
     """Core Transaction Data"""
-    customeraccount: str = None
-    amount: float = None
-    cxname: str = None
-    routing: str = None
-    bankaccount: str = None
-    accounttype: str = None
-    email: str = None
-    address: str = None
-    trxtype: str = None
+    customeraccount: Optional[str] = None
+    amount: Optional[float] = None
+    cxname: Optional[str] = None
+    routing: Optional[str] = None
+    bankaccount: Optional[str] = None
+    accounttype: Optional[str] = None
+    email: Optional[str] = None
+    address: Optional[str] = None
+    trxtype: Optional[str] = None
     fees: float = 0
-    origen: str = None
-    currency: str = None
+    origen: Optional[str] = None
+    currency: Optional[str] = None
+
+    @validator('customeraccount')
+    def validate_customeraccount(cls, value):  # pylint: disable = no-self-argument # noqa: E501
+        '''Validate Customer Account'''
+        if value is not None:
+            if not REGEXES["customeraccount"].match(value):
+                raise ValidationError('Invalid customeraccount')
+            if len(value) > LENGTHS["customeraccount"]:
+                raise ValidationError(
+                    f'customeraccount must be less than {
+                        LENGTHS["customeraccount"]} characters')  # noqa: E501 #pylint: disable= line-too-long
+        return value
 
 
 class TrxRowEcheck(PullTrxEcheck):
-    """docstring"""
-
-    def __init__(
-        self,
-        customeraccount,
-        amount,
-        cxname,
-        routing,
-        bankaccount,
-        accounttype,
-        email,
-        address,
-        trxtype=None,
-        fees=0,
-        parent=None,
-        type="row",  # pylint: disable=redefined-builtin
-        method=None,
-        created=0,
-        modified=0,
-        createds=0,
-        modifieds=0,
-        merchant=None,
-        status="pending",
-        descriptor=None,
-        reference=None,
-        reason=None,
-        comment=None,
-        origen=None,
-        currency=None
-    ):
-        self.customeraccount: str = customeraccount
-        self.amount: float = amount
-        self.cxname: str = cxname
-        self.routing: str = routing
-        self.bankaccount: str = bankaccount
-        self.accounttype: str = accounttype
-        self.email: str = email
-        self.address: str = address
-        self.trxtype: str = trxtype
-        self.fees: float = fees
-        self.parent: str = parent
-        self.merchant: str = merchant
-        self.type: str = type
-        self.method: str = method
-        self.created: int = created
-        self.modified: int = modified
-        self.createds: float = createds
-        self.modifieds: float = modifieds
-        self.merchant: str = merchant
-        self.status: str = status
-        self.descriptor: str = descriptor
-        self.reference: str = reference
-        self.reason: str = reason
-        self.comment: str = comment
-        self.origen: str = origen
-        self.currency: str = currency
+    """Transaction row for echeck"""
+    parent: Optional[str] = None
+    type: str = "row"
+    method: Optional[str] = None
+    created: int = 0
+    modified: int = 0
+    createds: float = 0
+    modifieds: float = 0
+    merchant: Optional[str] = None
+    status: str = "pending"
+    descriptor: Optional[str] = None
+    reference: Optional[str] = None
+    reason: Optional[str] = None
+    comment: Optional[str] = None
 
     def to_dict(self):
         """convert to dict"""
-        # Convert the object to a dictionary for storing in CouchDB
-        return {
-            'customeraccount': self.customeraccount,
-            'amount': self.amount,
-            'currency': self.currency,
-            'cxname': self.cxname,
-            'routing': self.routing,
-            'bankaccount': self.bankaccount,
-            'accounttype': self.accounttype,
-            'email': self.email,
-            'address': self.address,
-            'trxtype': self.trxtype,
-            'fees': self.fees,
-            'parent': "" if self.parent is None else self.parent,
-            'type': self.type,
-            'method': self.method,
-            'created': self.created,
-            'modified': self.modified,
-            'createds': self.createds,
-            'modifieds': self.modifieds,
-            'merchant': "" if self.merchant is None else self.merchant,
-            'status': "pending" if self.status is None else self.status,
-            'descriptor': "" if self.descriptor is None else self.descriptor,
-            'reference': "" if self.reference is None else self.reference,
-            'reason': "" if self.reason is None else self.reason,
-            'comment': "" if self.comment is None else self.comment,
-            'origen': "" if self.origen is None else self.origen
-        }
+        return self.model_dump(exclude_none=True)
 
-    class Config:
-        """docstring"""
-        validate_assignment = True
+
+class TrxRowEcheckSignature(BaseModel):
+    '''This is for the Total line in the files'''
+    label: Optional[str] = None
+    total: Optional[float] = 0.0
+    count: Optional[int] = 0
 
 
 class TrxRowEcheckId(TrxRowEcheck):
-    """docstring"""
-
-    def __init__(
-        self,
-        customeraccount,
-        amount,
-        cxname,
-        routing,
-        bankaccount,
-        accounttype,
-        email,
-        address,
-        trxtype=None,
-        fees=0,
-        parent=None,
-        type=None,  # pylint: disable=redefined-builtin
-        method=None,
-        created=0,
-        modified=0,
-        createds=0,
-        modifieds=0,
-        merchant=None,
-        status="pending",
-        descriptor=None,
-        reference=None,
-        reason=None,
-        comment=None,
-        origen=None,
-        currency=None,
-        id=None  # pylint: disable=redefined-builtin
-    ):
-        super().__init__(
-            customeraccount,
-            amount,
-            cxname,
-            routing,
-            bankaccount,
-            accounttype,
-            email,
-            address,
-            trxtype,
-            fees,
-            parent,
-            type,
-            method,
-            created,
-            modified,
-            createds,
-            modifieds,
-            merchant,
-            status,
-            descriptor,
-            reference,
-            reason,
-            comment,
-            origen,
-            currency
-        )
-        self.id: str = id
+    """Transaction row for echeck with id"""
+    id: Optional[str] = None
 
     def to_dict(self, withid: bool = True):
         """convert to dict"""
-        # Convert the object to a dictionary for storing in CouchDB
-        d = {
-            'customeraccount': self.customeraccount,
-            'amount': self.amount,
-            'currency': self.currency,
-            'cxname': self.cxname,
-            'routing': self.routing,
-            'bankaccount': self.bankaccount,
-            'accounttype': self.accounttype,
-            'email': self.email,
-            'address': self.address,
-            'trxtype': self.trxtype,
-            'fees': self.fees,
-            'parent': "" if self.parent is None else self.parent,
-            'type': self.type,
-            'method': self.method,
-            'created': self.created,
-            'modified': self.modified,
-            'createds': self.createds,
-            'modifieds': self.modifieds,
-            'merchant': "" if self.merchant is None else self.merchant,
-            'status': "pending" if self.status is None else self.status,
-            'descriptor': "" if self.descriptor is None else self.descriptor,
-            'reference': "" if self.reference is None else self.reference,
-            'reason': "" if self.reason is None else self.reason,
-            'comment': "" if self.comment is None else self.comment,
-            'origen': "" if self.origen is None else self.origen
-        }
-        if withid:
+        d = self.model_dump(exclude_none=True)
+        if withid and self.id is not None:
             d["_id"] = self.id
         return d
 
-    class Config:
-        """docstring"""
-        validate_assignment = True
-
 
 class TrxRowEcheckList:
-    """docstring"""
+    """An array of Echeck rows"""
     list: List[TrxRowEcheck]

@@ -50,7 +50,7 @@ const closedMixin = (theme: Theme): CSSObject => ({
     },
 });
 
-const menuRouteList = ["/", "/dashboard/settings", "/dashboard/upload", "/dashboard/trxs", "/dashboard/t_adj", ""];
+const menuRouteList = ["/dashboard", "/dashboard/settings", "/dashboard/upload", "/dashboard/trxs", "/dashboard/t_adj", ""];
 const menuListTranslations = ["Home", "Settings", "Upload", "Transactions", "Adjustments", "Sign Out"];
 const menuListIcons = [
     <HomeIcon key="home" />,

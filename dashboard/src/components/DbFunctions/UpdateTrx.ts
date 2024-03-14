@@ -141,7 +141,7 @@ export async function UpdateTransactionFnc<Transaction>(requestdata: RequestData
 export async function CreateTransactionFnc<Transaction>(requestdata: RequestCreate) {
   console.log(requestdata);
   let data: any;
-  const API_URL = '/api/fetch/fetchProcessorTransactionCreate';
+  const API_URL = '/api/fetch/fetchTransactionCreate';
   const customConfig = {
     headers: {
       'Content-Type': 'application/json'

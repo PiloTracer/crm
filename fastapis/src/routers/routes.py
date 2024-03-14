@@ -114,7 +114,6 @@ async def user_login(
     '''description'''
 
     response = get_message_login(db, user)
-
     return response
 
 

@@ -20,7 +20,7 @@ from helper.fileutils import save_uploaded_file
 from helper.merchants import get_fees
 from helper.parsing import validate_parsed
 from models.classes import RabbitMessage, UserApiClass
-from models.model import MessageSchema, MessageSchemaRef, TrxRowEcheckId, \
+from models.model import MessageSchema, MessageSchemaRef, TrxRowEcheckId, TrxRowEcheckSignature, \
     TrxUpdateSchema, TrxHeadEcheck, TrxRowEcheck, MerchRequestSchema, \
     MerchRequestSimpleSchema, UserApiEmailSchema, UserApiTrxSchema
 from models.modelbalance import BalanceModel
@@ -117,7 +117,6 @@ async def updatetrx(
                     doc["message"] = "ok"
                 else:
                     doc = db.get(trx.id)
-                    doc["message"] = "nok"
                     actions.append("Failed to create transaction")
                     raise ValueError("Failed transaction")
 
@@ -437,15 +436,34 @@ def uploads(
                 tmp = excel_data_df.values.tolist()
                 for t in tmp:
                     try:
-                        line: TrxRowEcheck = TrxRowEcheck(*t)
-                        line.amount = float(line.amount)
+                        line = (
+                            TrxRowEcheck(
+                                customeraccount=t[0],
+                                amount=float(t[1]),
+                                cxname=t[2],
+                                routing=t[3],
+                                bankaccount=t[4],
+                                accounttype=t[5],
+                                email=t[6],
+                                address=t[7],
+                                trxtype=t[8],
+                                parent=t[9]
+                            )
+                            if t[0].lower() != "total"
+                            else TrxRowEcheckSignature(
+                                label=t[0],
+                                total=float(t[1]),
+                                count=t[2]
+                            )
+                        )
+                        if isinstance(line, TrxRowEcheckSignature) and (
+                                line.total != suma
+                                or line.count != count):
+                            raise ValueError("Total or count does not match")
                     except Exception as e:  # pylint: disable=broad-except
                         detail = f'There was an error hydrating row: {e}'
                         return detail
-                    if f"{line.customeraccount}" == "total":
-                        total = line.amount
-                        count = int(line.cxname)
-                    else:
+                    if isinstance(line, TrxRowEcheck):
                         line.currency = "usd"
                         line.fees = get_fees(abs(line.amount), ofees)
                         line.method = method
@@ -489,7 +507,6 @@ def uploads(
                     doc.fullpath = f"{directory}/{entry.name}"
                     doc.duplicate = False
                     doc.count = count
-                    doc.total = total
                     doc.sum = suma
                     if col[1] not in db:
                         # pylint: disable=unused-variable
