@@ -14,6 +14,10 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Theme,
+  createStyles,
+  makeStyles,
+  styled,
 } from '@mui/material';
 import {
   QueryClient,
@@ -23,7 +27,7 @@ import {
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { mkConfig, generateCsv, download } from 'export-to-csv'; //or use your library of choice here
 import axios from 'axios';
-import { UploadLogs, ExtraDetails, ErrorDetails } from '@/components/DbFunctions/UploadLogs'
+import { UploadLogs } from '@/components/DbFunctions/UploadLogs'
 import { useSession } from 'next-auth/react';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -41,6 +45,18 @@ type Request = {
   merchant: string,
   context: string
 }
+
+const SuccessBackground = styled('div')(({ theme }) => ({
+  backgroundColor: theme.palette.success.main,
+  borderRadius: '8px',
+  padding: '0px',
+}));
+
+const ErrorBackground = styled('div')(({ theme }) => ({
+  backgroundColor: theme.palette.error.main,
+  borderRadius: '8px',
+  padding: '0px',
+}));
 
 const UploadResultsTable: React.FC = () => {
   const [snackbarOpen, setSnackbarOpen] = useState<boolean>(false);
@@ -138,30 +154,50 @@ const UploadResultsTable: React.FC = () => {
         enableEditing: false,
         Edit: () => null,
         Cell: ({ cell }) => {
-          const extra = cell.getValue() as ExtraDetails;
+          const extra = cell.getValue() as string[];
 
-          if (extra &&
-            typeof extra === 'object') {
-            return (
-              <ul>
-                {extra.message && <li>{extra.message}</li>}
+          let backgroundColor = 'inherit';
+          if (extra && Array.isArray(extra) && extra.length > 0) {
+            const firstMessage = extra[0].toLowerCase();
 
-                {extra.err && typeof extra.err === 'object' &&
-                  Object.entries(extra.err).map(([key, value]) => (
-                    <li key={key}>
-                      {key}: {value.toString()}
-                    </li>
-                  ))
-                }
-              </ul>
-            );
+            if (firstMessage.includes('success')) {
+              return (
+                <SuccessBackground>
+                  <ul>
+                    {extra.map((message, index) => (
+                      <li key={index}>{message}</li>
+                    ))}
+                  </ul>
+                </SuccessBackground>
+              );
+            } else if (firstMessage.includes('error')) {
+              return (
+                <ErrorBackground>
+                  <ul>
+                    {extra.map((message, index) => (
+                      <li key={index}>{message}</li>
+                    ))}
+                  </ul>
+                </ErrorBackground>
+              );
+            } else {
+              return (
+                <div>
+                  <ul>
+                    {extra.map((message, index) => (
+                      <li key={index}>{message}</li>
+                    ))}
+                  </ul>
+                </div>
+              );
+
+            }
           }
 
           // Return null or some default display if extra is not available
           return null;
         }
       }
-
     ]
     ,
     [validationErrors, role],

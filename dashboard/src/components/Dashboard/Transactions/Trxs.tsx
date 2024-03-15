@@ -443,7 +443,6 @@ const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
   }) => {
     const newValidationErrors = validateTransactionCreate(values);
     const errorMessages = Object.values(newValidationErrors).filter(Boolean).join('\n');
-    setIsCreating(false);
     if (errorMessages) {
       const messageLines = errorMessages.split('\n').map((line, index) => (
         <p key={index} style={{ margin: 0 }}>{line}</p>
@@ -455,6 +454,7 @@ const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
     setValidationErrors({});
     await createTransaction(values);
     table.setCreatingRow(null); //exit creating mode
+    handleCreateModalClose();
   };
 
 
@@ -465,7 +465,6 @@ const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
   }) => {
     const newValidationErrors = validateTransaction(values);
     const errorMessages = Object.values(newValidationErrors).filter(Boolean).join('\n');
-    setIsCreating(false);
     if (errorMessages) {
       const messageLines = errorMessages.split('\n').map((line, index) => (
         <p key={index} style={{ margin: 0 }}>{line}</p>
@@ -478,6 +477,7 @@ const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
     setValidationErrors({});
     await updateTransaction(values);
     table.setEditingRow(null); //exit creating mode
+    handleEditModalClose();
   };
 
   //DELETE action
@@ -520,6 +520,15 @@ const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
   };
 
 
+  const handleCreateModalClose = () => {
+    // IsCreating is set in the transformer, let's try it
+    console.log('Create modal closed');
+  };
+
+  const handleEditModalClose = () => {
+    setIsCreating(false);
+    console.log('Edit/update modal closed');
+  };
 
 
 
@@ -530,7 +539,21 @@ const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
     enableColumnPinning: true,
     enableColumnActions: true,
     initialState: {
-      density: 'compact', columnVisibility: { routing: false, accounttype: false, address: false, descriptor: false, reason: false, bankaccount: false, email: false, reference: false, fees: false, parent: false, _id: false, type: false },
+      density: 'compact',
+      columnVisibility: {
+        routing: false,
+        accounttype: false,
+        address: false,
+        descriptor: false,
+        reason: false,
+        bankaccount: false,
+        email: false,
+        reference: false,
+        fees: false,
+        parent: false,
+        _id: false,
+        type: false
+      },
       columnPinning: {
         left: ['mrt-row-expand', 'mrt-row-select'],
         right: role == "owner" ? ['mrt-row-actions'] : [],
@@ -574,6 +597,7 @@ const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
             gap: '0px', // Optional gap between columns
             width: '100%',
             '& > *': {
+              fontSize: "12px",
               borderBottom: '1px solid rgba(81, 81, 81, 1)', // Horizontal gridlines
               borderRight: '1px solid rgba(81, 81, 81, 1)', // Vertical gridlines
               padding: '2px', // Optional padding
@@ -593,12 +617,14 @@ const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
           <Typography>Reference: {row.original.reference}</Typography>
           <Typography>Reason: {row.original.reason}</Typography>
           <Typography>Fees: {row.original.fees}</Typography>
+          <Typography>Id: {row.original._id}</Typography>
         </Box>
       ) : null,
     paginationDisplayMode: 'pages',
     data: fetchedTransactions,
     positionToolbarAlertBanner: 'bottom',
     enableRowSelection: true,
+    columnFilterDisplayMode: 'popover',
     defaultColumn: { minSize: 20, maxSize: 50 },
     layoutMode: 'semantic',
     createDisplayMode: 'modal', //default ('row', and 'custom' are also available)
@@ -633,6 +659,20 @@ const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
         fontSize: '12px',
       },
     },
+    muiTablePaperProps: {
+      sx: {
+        '& .MuiFormControl-root': {
+          fontSize: '11px', // Adjust the font size as needed
+        },
+      },
+    },
+    muiTableBodyProps: {
+      sx: {
+        '& .MuiTableCell-root': {
+          fontSize: '12px', // Adjust the font size as needed
+        },
+      },
+    },
     muiTableBodyRowProps: ({ row }) => ({
       //conditionally style selected rows
       sx: {
@@ -643,29 +683,28 @@ const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
       //conditionally style pinned columns
       sx: {
         padding: '0px 0px',
-        fontSize: '12px',
         color: cell.row.original.status === 'approved' ? 'green' : cell.row.original.status === 'reversed' ? 'red' : 'inherit',
       },
     }),
     onCreatingRowCancel: () => {
-      setIsCreating(false);
       setValidationErrors({});
+      handleCreateModalClose();
     },
     onCreatingRowSave: handleCreateTransaction,
     onEditingRowCancel: () => {
-      setIsCreating(false);
       setValidationErrors({});
+      handleEditModalClose();
     },
     onEditingRowSave: handleSaveTransaction,
     renderRowActions: ({ row }) => {
       if (role == "owner") {
         return (
           <Box sx={{ display: 'flex', gap: '1rem' }}>
-            <Tooltip title="Edit">
-              <IconButton color="success" onClick={() => table.setEditingRow(row)}>
-                <EditIcon />
-              </IconButton>
-            </Tooltip>
+            {/*<Tooltip title="Edit">*/}
+            <IconButton color="success" onClick={() => table.setEditingRow(row)}>
+              <EditIcon />
+            </IconButton>
+            {/*</Tooltip> */}
             {/* <Tooltip title="Delete">
           <IconButton color="error" onClick={() => openDeleteConfirmModal(row)}>
             <DeleteIcon />
@@ -823,7 +862,7 @@ function useCreateTransaction(
     onSuccess: (data: Transaction, variables, context) => {
       console.log("data: ", data);
       console.log("variables: ", variables);
-      if (data === undefined || data?.message == undefined || data?.message != "ok") {
+      if (data === undefined || data?.message == undefined || !["ok"].includes(data.message)) {
         //console.log("reverting... ", '-variables-', JSON.stringify(variables), '-data-', JSON.stringify(data));
         handleOpenSnackbar("Transaction failed, possible Non Sufficient Funds");
         context?.rollback?.();
@@ -905,11 +944,9 @@ function useUpdateTransaction(
           reference: transaction?.reference,
           reason: transaction?.reason,
           transaction: {
-            type: transaction?.status == "approved" ? "debit" :
-              transaction?.status == "reversed" ? "credit" : "debit",
+            type: ["reversed"].includes(transaction.status) ? "credit" : "debit",
             context: "withdrawal",
-            trxtype: transaction?.status == "approved" ? "payout" :
-              transaction?.status == "reversed" ? "refund" : "payout",
+            trxtype: ["reversed"].includes(transaction.status) ? "refund" : "payout",
             amnt: transaction?.amount,
             fees: transaction?.fees,
             description: "customer requested withdraw",
@@ -918,7 +955,8 @@ function useUpdateTransaction(
             method: transaction?.method,
             channel: transaction?.parent,
             token: token,
-            checksum: null
+            checksum: null,
+            origen: "main"
           }
         }
         res = await UpdateTransactionFnc(request);
@@ -975,13 +1013,13 @@ function useUpdateTransaction(
 function useDeleteTransaction() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (transactionId: string) => {
+    mutationFn: async (transactionId: string | null) => {
       //send api update request here
       await new Promise((resolve) => setTimeout(resolve, 1000)); //fake api call
       return Promise.resolve();
     },
     //client side optimistic update
-    onMutate: (transactionId: string) => {
+    onMutate: (transactionId: string | null) => {
       queryClient.setQueryData(['transactions'], (prevTransactions: any) =>
         prevTransactions?.filter((transaction: Transaction) => transaction._id !== transactionId),
       );

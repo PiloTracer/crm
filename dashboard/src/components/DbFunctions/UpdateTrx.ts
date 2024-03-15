@@ -12,7 +12,8 @@ export type RequestDataExtra = {
   method: string,
   channel: string,
   token: string | null,
-  checksum: string | null
+  checksum: string | null,
+  origen: string | null
 }
 
 export type RequestData = {
@@ -77,30 +78,32 @@ export class TrxPromise<T> extends Promise<T>{
 }
 
 export type Transaction = {
-  "_id": string,
-  "customeraccount": string,
-  "amount": number,
-  "currency": string,
-  "fees": number,
-  "cxname": string,
-  "routing": string,
-  "bankaccount": string,
-  "accounttype": string,
-  "email": string,
-  "address": string,
-  "trxtype": string,
-  "parent": string,
-  "type": string,
-  "method": string,
-  "createds": number,
-  "createdf": string,
-  "modified": string,
-  "merchant": string,
-  "status": string,
-  "descriptor": string,
-  "reference": string,
-  "reason": string,
-  "message": string
+  _id: string | '',
+  customeraccount: string | '',
+  amount: number | 0,
+  currency: string | '',
+  fees: number | 0,
+  cxname: string | '',
+  routing: string | '',
+  bankaccount: string | '',
+  accounttype: string | '',
+  email: string | '',
+  address: string | '',
+  trxtype: string | '',
+  parent: string | '',
+  type: string | '',
+  method: string | '',
+  createds: number | 0,
+  createdf: string | '',
+  modified: string | '',
+  modifieds: number | 0,
+  merchant: string | '',
+  status: string | '',
+  descriptor: string | '',
+  reference: string | '',
+  reason: string | '',
+  message: string | '',
+  error: string | ''
 }
 
 export type ResponseData = {
@@ -162,6 +165,7 @@ export async function CreateTransactionFnc<Transaction>(requestdata: RequestCrea
     //}
 
   } catch(error) {
+    console.log("error: ", error);
     throw error;
 
   } finally {

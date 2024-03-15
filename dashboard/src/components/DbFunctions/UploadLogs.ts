@@ -1,14 +1,5 @@
 import axios from "axios"
 
-export type ErrorDetails = {
-  [key: string]: string; // You can replace 'any' with a more specific type if you know the structure of 'err'
-};
-
-export type ExtraDetails = {
-  message: string;
-  err?: ErrorDetails; // Making 'err' optional
-};
-
 export type UploadLogs = {
   _id: string,
   created: number,
@@ -22,7 +13,7 @@ export type UploadLogs = {
   parent: string | null,
   status: boolean | false,
   src: string | null,
-  extra: ExtraDetails | null
+  extra: string[] | null
 }
 
 export async function CreateTransactionFnc(req = null) {
