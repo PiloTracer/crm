@@ -26,7 +26,7 @@ def delete_docs_except_design_views(db_name):
     elif db_name in ["log", "logs"]:
         db = get_db.get_dblog()
         execute_delete(db)
-    elif db_name in ["logtrx", "logtransactions", "log_trx"]:
+    elif db_name in ["logtrx", "logtransactions", "trxlog", "log_trx"]:
         db = get_db.get_dblogtrx()
         execute_delete(db)
     elif db_name in ["merchant", "merchants"]:

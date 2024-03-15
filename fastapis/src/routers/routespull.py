@@ -6,23 +6,34 @@ import pathlib
 from typing import List
 import traceback
 import aiofiles
-from fastapi import APIRouter, Depends, UploadFile, HTTPException, status
+from fastapi import APIRouter, Body, Depends, UploadFile, HTTPException, status
 from couchdb import Server
 import pandas
+from pydantic import ValidationError
 
-import redis
 from dependencies.get_db import \
     get_dbbalance, get_dblogtrx, get_dbtrx, \
     get_dblog, get_dbmerchant, get_dbusr
 from core.settings import Settings
 from helper.balance import create_balance_trx
+from helper.counter import counter_next
 from helper.fileutils import save_uploaded_file
+from helper.logging import log_and_return_message, publishnewfile
 from helper.merchants import get_fees
-from helper.parsing import validate_parsed
-from models.classes import RabbitMessage, UserApiClass
-from models.model import MessageSchema, MessageSchemaRef, TrxRowEcheckId, TrxRowEcheckSignature, \
-    TrxUpdateSchema, TrxHeadEcheck, TrxRowEcheck, MerchRequestSchema, \
-    MerchRequestSimpleSchema, UserApiEmailSchema, UserApiTrxSchema
+from helper.parsing import validate_file_struct
+from helper.bloomfilter import is_duplicate_transaction
+from models.classes import UserApiClass
+from models.model import (
+    MessageSchema,
+    MessageSchemaRef,
+    TrxRowEcheckId,
+    TrxRowEcheckSignature,
+    TrxUpdateSchema,
+    TrxHeadEcheck,
+    TrxRowEcheck,
+    MerchRequestSchema,
+    MerchRequestSimpleSchema,
+    UserApiEmailSchema)
 from models.modelbalance import BalanceModel
 from models.modelhelper import LogTrxModel
 from models.modelmerch import MerchFeeModel, MerchModel, MerchProcessorModel
@@ -44,7 +55,7 @@ def health():
 
 @routerpull.post("/updatetrx")
 async def updatetrx(
-    trx: TrxUpdateSchema,
+    request: dict = Body(...),
     db: Server = Depends(get_dbtrx),
     dblog: Server = Depends(get_dblog),
     # dbm: Server = Depends(get_dbmerchant)
@@ -57,6 +68,7 @@ async def updatetrx(
     doc_rev = ""  # pylint: disable=unused-variable
     doc = {"message": "nok"}
     try:
+        trx = TrxUpdateSchema.model_validate(request)
         balance: BalanceModel = BalanceModel()
         p = "".join((
             directory, "/", "test.log"
@@ -74,6 +86,7 @@ async def updatetrx(
             doc["descriptor"] = trx.descriptor
             doc["reference"] = trx.reference
             doc["reason"] = trx.reason
+            doc["modifieds"] = time.time()
             doc["createdf"] = datetime.fromtimestamp(doc["createds"]).\
                 strftime('%m-%d-%Y %H:%M:%S')
 
@@ -107,7 +120,7 @@ async def updatetrx(
                 balance.channel = trx.transaction.channel
                 balance.token = trx.transaction.token
                 balance.checksum = trx.transaction.checksum
-                balance.origen = doc["origen"]
+                balance.origen = doc.get("origen", "unknown")
                 # Create the balance transaction
                 res = await create_balance_trx(balance)
 
@@ -123,10 +136,18 @@ async def updatetrx(
             db.save(doc)
             doc["message"] = "ok"
 
+    except ValidationError as e:
+        error_messages = []
+        for error in e.errors():
+            # pylint: disable = unused-variable
+            field = error["loc"][-1]  # noqa: F841
+            msg = error["msg"]
+            error_messages.append(f"Error: {msg}({field})")
+        doc["error"] = ", ".join(error_messages)
     # pylint: disable=unused-variable, broad-exception-caught
     except Exception as exc:
         doc["message"] = "nok"
-        doc["error"] = exc
+        doc["error"] = str(exc)
         # raise HTTPException(
         #    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         #    detail=f'There was an error updating the
@@ -134,7 +155,7 @@ async def updatetrx(
     finally:
         dblog.save(
             {
-                "created_by": trx.username,
+                "created_by": request["username"],
                 "actions": actions,
                 "doc": doc
             }
@@ -202,17 +223,37 @@ async def get_api_auth(
 
 @routerpull.post("/transaction/create")
 async def transaction_create(
-    request: UserApiTrxSchema,
+    request: dict = Body(...)
 ):
     '''Add a manual transaction'''
-    request.origen = "main"
-    result = await transaction_add(request)
-    return result
+    result = {
+        'status': "failed",
+        'message': "nok",
+        'reference': "n/a",
+        'error': "some error"
+    }
+    try:
+        request["origen"] = "main"
+        request["_id"] = f"{request["merchant"]}_{request["method"]}_{counter_next("manualtrx")}_u"
+        result = await transaction_add(request)
+    except ValidationError as e:  # pylint: disable= broad-exception-caught
+        error_messages = ["Error"]
+        for error in e.errors():
+            # pylint: disable = unused-variable
+            field = error["loc"][-1]  # noqa: F841
+            msg = error["msg"]
+            error_messages.append(f"Error: {msg}({field})")
+        result["error"] = ", ".join(error_messages)
+
+    except Exception as e:  # pylint: disable= broad-exception-caught
+        result["error"] = str(e)
+
+    return result  # pylint: disable = return-in-finally, lost-exception
 
 
 @routerpull.post("/transaction/add")
 async def transaction_add(
-    request: UserApiTrxSchema
+    request: dict = Body(...)
 ):
     '''Add a transaction through API'''
 
@@ -220,98 +261,100 @@ async def transaction_add(
     dbm = get_dbmerchant()
     db = get_dbtrx()
 
-    #
-    # Default response message
-    request.origen = "customer" if request.origen != "main" else "main"
-    request.authemail = \
-        request.authemail if request.origen != "main" \
-        else request.created_by
     message: MessageSchemaRef = MessageSchemaRef(
-        status='failed', message='nok', reference=None, error='default error')
-
-    #
-    # Validate the request
-    # http://localhost:6984/w_merchants/_design/Merchant/_view/vProcessors?key=[%22cliente%22,%22netcashach%22]
-    oprocessor = dbm.view('Merchant/vProcessors',
-                          key=[request.merchant, request.method], limit=1)
-    if len(oprocessor.rows) > 0:
-        oprocessor = MerchProcessorModel(**oprocessor.rows[0].value)
-    else:
-        oprocessor = None
-    ouser: UserApiClass = UserApiClass(**dbu.get(request.authemail))
-    merch: str = ouser.merchant \
-        if request.origen == "customer" \
-        else request.merchant
-    omerch: MerchModel = MerchModel(
-        **dbm.get(merch)
-    )
-    if (request.origen != "main"
-        and (ouser.apitoken != request.apikey
-             or ouser.active is False
-             or omerch.active is False
-             or oprocessor is None
-             or oprocessor.active is False)):
-        message.error = "failed to validate the request"
-        return message
-
-    #
-    # Get and calculate fees
-    ofees = dbm.view('Merchant/vFees',
-                     key=[merch, request.method, True])
-    if len(ofees.rows) > 0:
-        ofees = [MerchFeeModel(**row.value) for row in ofees]
-    else:
-        ofees = None
-    if ofees is None or len(ofees) == 0:
-        message.error = "no active fees available for this method"
-        return message
-
-    #
-    # Prepare the transaction
-    line: TrxRowEcheckId = TrxRowEcheckId(
-        customeraccount=request.customeraccount,
-        amount=float(request.amount),
-        currency=request.currency,
-        cxname=request.cxname,
-        routing=request.routing,
-        bankaccount=request.bankaccount,
-        accounttype=request.accounttype,
-        email=request.email,
-        address=request.address,
-        trxtype=request.trxtype,
-        fees=get_fees(abs(float(request.amount)), ofees),
-        parent="direct",
-        merchant=request.merchant,
-        type="row",
-        method=request.method,
-        created=int(datetime.fromtimestamp(time.time()).
-                    strftime('%Y%m%d%H%M%S')),
-        modified=int(datetime.fromtimestamp(time.time()).
-                     strftime('%Y%m%d%H%M%S')),
-        createds=time.time(),
-        modifieds=time.time(),
-        status="pending",
-        descriptor=None,
+        status='failed',
+        message='nok',
         reference=None,
-        reason=None,
-        comment=request.comment,
-        origen=request.origen,
-        id=request.id
-    )
+        error='default error')
 
-    doc = line.to_dict(request.origen == "customer")
+    try:
+        # check for duplicates
+        if request["origen"] == "customer" and \
+            is_duplicate_transaction(request["_id"], db):
+            raise ValueError("Error duplicate found")
 
-    # pylint: disable=unused-variable
-    doc_id, doc_rev = db.save(doc)
-    message = db.get(doc_id)
-    if doc_id is not None and doc_id != "":
-        message["message"] = "ok"
+        # validate and mutate the request
+        line = TrxRowEcheckId.model_validate(
+            request,
+            strict=None,
+            from_attributes=None)
+
+        #
+        # Default response message
+        line.origen = "customer" if line.origen != "main" else "main"
+        line.authemail = \
+            line.authemail if line.origen != "main" \
+            else line.created_by
+
+        #
+        # Validate the request
+        # http://localhost:6984/w_merchants/_design/Merchant/_view/vProcessors?key=[%22cliente%22,%22netcashach%22]
+        oprocessor = dbm.view('Merchant/vProcessors',
+                              key=[line.merchant, line.method], limit=1)
+        if len(oprocessor.rows) > 0:
+            oprocessor = MerchProcessorModel(**oprocessor.rows[0].value)
+        else:
+            oprocessor = None
+        ouser: UserApiClass = UserApiClass(**dbu.get(line.authemail))
+        merch: str = ouser.merchant \
+            if line.origen == "customer" \
+            else line.merchant
+        omerch: MerchModel = MerchModel(
+            **dbm.get(merch)
+        )
+        if (line.origen != "main"
+            and (ouser.apitoken != line.apikey
+                 or ouser.active is False
+                 or omerch.active is False
+                 or oprocessor is None
+                 or oprocessor.active is False)):
+            message.error = "Error validating the request"
+            return message
+
+        #
+        # Get and calculate fees
+        ofees = dbm.view('Merchant/vFees',
+                         key=[merch, line.method, True])
+        if len(ofees.rows) > 0:
+            ofees = [MerchFeeModel(**row.value) for row in ofees]
+        else:
+            ofees = None
+        if ofees is None or len(ofees) == 0:
+            message.error = "Error applying fees"
+            return message
+
+        # Set additional values
+        line.fees = get_fees(abs(float(line.amount)), ofees)
+        line.parent = "direct"
+        line.type = "row"
+        line.status = "pending"
+        ####
+
+        doc = line.to_dict(True)
+
+        # pylint: disable=unused-variable
+        doc_id, doc_rev = db.save(doc)
+        message = db.get(doc_id)
+        if doc_id is not None and doc_id != "":
+            message["message"] = "ok"
+
+    except ValidationError as e:  # pylint: disable= broad-exception-caught
+        error_messages = ["Error"]
+        for error in e.errors():
+            # pylint: disable = unused-variable
+            field = error["loc"][-1]  # noqa: F841
+            msg = error["msg"]
+            error_messages.append(f"Error: {msg}({field})")
+        message.error = ", ".join(error_messages)
+
+    except Exception as e:  # pylint: disable= broad-exception-caught
+        message.error = str(e)
 
     return message
 
 
 @routerpull.get("/loadfile")
-def uploads(
+async def uploads(
     filename: str,
     db: Server = Depends(get_dbtrx),
     dbm: Server = Depends(get_dbmerchant)
@@ -319,218 +362,291 @@ def uploads(
     '''method description'''
     settings = Settings()
     directory = settings.general_upload_path
-    validation_results = {"status": "nok"}
+    # validation_results = {"status": "nok"}
     merch = ""  # let's make merch variable global
 
     file_list = []
     inserted_document_ids = []
     week_ago = time.time() - 7 * 24 * 60 * 60
 
-    o_file = pathlib.Path(f'{directory}/{filename}')
+    entry = pathlib.Path(f'{directory}/{filename}')
+    parts = filename.split("_")
     message: MessageSchema = MessageSchema(status='ok', message='Success')
 
-    if o_file.exists():
-        dir_entries = [o_file]
-        # with os.scandir(directory) as dir_entries:
-        for entry in dir_entries:
-            ext = pathlib.Path(entry.name).suffix
-            excel_data_df = ""
-            l1 = []
-            count = 0
-            total = 0
-            suma = 0
-            col = entry.name.split("_")
-            merch = col[2].lower()
-            method = col[3].lower()
-            #############################
-            #
-            #
-            m = dbm.get(merch)
-            omerch: MerchModel = MerchModel(**m)
-            if omerch is None or omerch.active is False:
-                message.status = 'nok'
-                message.message = "merchant is not active"
-                break
-            # doc.merchant, doc.processor
-            # http://localhost:6984/w_merchants/_design/Merchant/_view/vProcessors?key=["latcorp","netcashach"]
-            oprocessor = dbm.view('Merchant/vProcessors',
-                                  key=[merch, method], limit=1)
-            if len(oprocessor.rows) > 0:
-                oprocessor = MerchProcessorModel(**oprocessor.rows[0].value)
-            else:
-                oprocessor = None
-            if oprocessor is None or oprocessor.active is False:
-                message.status = 'nok'
-                message.message = "processor is not active"
-                break
-            # doc.merchant, doc.processor, doc.active
-            # http://localhost:6984/w_merchants/_design/Merchant/_view/vFees?key=["latcorp","netcashach",true]
-            ofees = dbm.view('Merchant/vFees',
-                             key=[merch, method, True])
-            if len(ofees.rows) > 0:
-                ofees = [MerchFeeModel(**row.value) for row in ofees]
-            else:
-                ofees = None
-            if ofees is None or len(ofees) == 0:
-                message.status = 'nok'
-                message.message = "no active fees"
-                break
-            #
-            #
-            #############################
-            # if (ext == ".txt"):
-            #    rows = pandas.read_csv(f"{directory}{entry.name}")
-            if ext == ".xlsx":
-                excel_data_df = \
-                    pandas.read_excel(
-                        f"{directory}/{entry.name}",
-                        sheet_name='E-Check',
-                        engine='openpyxl',
-                        header=0,
-                        converters={
-                            'CX Name': str,
-                            'Customer Account': str,
-                            'Amount': str,
-                            'Routing #': str,
-                            'Bank Account #': str})\
-                    .assign(parent=col[1])\
-                    .rename(
-                        columns=lambda x: x.strip().
-                        replace(" ", "").
-                        replace("#", "").lower())
-                for column in excel_data_df.select_dtypes(include=[object]).columns:  # noqa: E501
-                    # Remove leading and trailing spaces
-                    excel_data_df[column] = excel_data_df[column].str.strip()
-                    excel_data_df[column] = excel_data_df[column].str.replace(
-                        r'\s+', ' ', regex=True)  # Convert multiple spaces to one # noqa: E501
-                    # Convert to lower case
-                    excel_data_df[column] = excel_data_df[column].str.lower()
+    ##########
+    # Prepare the log for this file
+    db_logtrx = get_dblogtrx()
+    view_result = db_logtrx.view(
+        'logtrx/by_doc_id',
+        key=parts[1],
+        include_docs=True,
+        descending=True)
+    docv = view_result.rows[0].doc
+    docv["extra"] = ["Processing file..."] + docv["extra"]
+    ##########
 
-                # Get a string with all the column
-                # headers separated by pipe "|"
-                column_headers: str = "|".join(excel_data_df.columns)
-                validation_results = validate_parsed(
-                    o_file, method, excel_data_df, column_headers)
-                ##################
-                # let's update the entry in the database
-                parts = filename.split("_")
-                db_logtrx = get_dblogtrx()
-                view_result = db_logtrx.view(
-                    'logtrx/by_doc_id',
-                    key=parts[1],
-                    include_docs=True)
-                doc = view_result.rows[0].doc
-                doc["extra"]["message"] = "Added Transactions"
-                ##################
-                if validation_results.status is False:
-                    validation_results.message = "Failed Validation"
-                    message.status = 'nok'
-                    message.message = "validation failed"
-                    doc["extra"] = validation_results.__dict__
-                db_logtrx.save(doc)
-                publishnewfile(filename)
-                # TODO: the following code is ugly, need to fix
-                if validation_results.status is False:
-                    break
+    if entry.exists() is False:
+        r = await log_and_return_message(
+            db_logtrx,
+            message,
+            docv,
+            "nok",
+            "Error with file")
+        return r
 
-                tmp = excel_data_df.values.tolist()
-                for t in tmp:
-                    try:
-                        line = (
-                            TrxRowEcheck(
-                                customeraccount=t[0],
-                                amount=float(t[1]),
-                                cxname=t[2],
-                                routing=t[3],
-                                bankaccount=t[4],
-                                accounttype=t[5],
-                                email=t[6],
-                                address=t[7],
-                                trxtype=t[8],
-                                parent=t[9]
-                            )
-                            if t[0].lower() != "total"
-                            else TrxRowEcheckSignature(
-                                label=t[0],
-                                total=float(t[1]),
-                                count=t[2]
-                            )
-                        )
-                        if isinstance(line, TrxRowEcheckSignature) and (
-                                line.total != suma
-                                or line.count != count):
-                            raise ValueError("Total or count does not match")
-                    except Exception as e:  # pylint: disable=broad-except
-                        detail = f'There was an error hydrating row: {e}'
-                        return detail
-                    if isinstance(line, TrxRowEcheck):
-                        line.currency = "usd"
-                        line.fees = get_fees(abs(line.amount), ofees)
-                        line.method = method
-                        line.status = "pending"
+    ext = pathlib.Path(entry.name).suffix
+    excel_data_df = ""
+    l1 = []
+    count = 0
+    suma = 0
+    col = entry.name.split("_")
+    merch = col[2].lower()
+    method = col[3].lower()
+    if col[1] in db:
+        r = await log_and_return_message(
+            db_logtrx,
+            message,
+            docv,
+            "nok",
+            "Error file is duplicate")
+        return r
+    #############################
+    #
+    #
+    m = dbm.get(merch)
+    omerch: MerchModel = MerchModel(**m)
+    if omerch is None or omerch.active is False:
+        r = await log_and_return_message(
+            db_logtrx,
+            message,
+            docv,
+            "nok",
+            "Error in merchant")
+        return r
+    # doc.merchant, doc.processor
+    # http://localhost:6984/w_merchants/_design/Merchant/_view/vProcessors?key=["latcorp","netcashach"]
+    oprocessor = dbm.view('Merchant/vProcessors',
+                          key=[merch, method], limit=1)
+    if len(oprocessor.rows) > 0:
+        oprocessor = MerchProcessorModel(**oprocessor.rows[0].value)
+    else:
+        oprocessor = None
+    if oprocessor is None or oprocessor.active is False:
+        r = await log_and_return_message(
+            db_logtrx,
+            message,
+            docv,
+            "nok",
+            "Error with processor/method")
+        return r
 
-                        line.merchant = merch
-                        line.created = \
-                            int(datetime.fromtimestamp(entry.stat().st_ctime).
-                                strftime('%Y%m%d%H%M%S'))
-                        line.modified = \
-                            int(datetime.fromtimestamp(entry.stat().st_mtime).
-                                strftime('%Y%m%d%H%M%S'))
-                        line.createds = entry.stat().st_ctime
-                        line.modifieds = entry.stat().st_mtime
-                        line.parent = col[1]
-                        l1.append(line)
-                        suma += line.amount
-                        count += 1
+    # doc.merchant, doc.processor, doc.active
+    # http://localhost:6984/w_merchants/_design/Merchant/_view/vFees?key=["latcorp","netcashach",true]
+    ofees = dbm.view('Merchant/vFees',
+                     key=[merch, method, True])
+    if len(ofees.rows) > 0:
+        ofees = [MerchFeeModel(**row.value) for row in ofees]
+    else:
+        ofees = None
+    if ofees is None or len(ofees) == 0:
+        r = await log_and_return_message(
+            db_logtrx,
+            message,
+            docv,
+            "nok",
+            "Error in fees")
+        return r
+    #
+    #
+    #############################
+    # if (ext == ".txt"):
+    #    rows = pandas.read_csv(f"{directory}{entry.name}")
+    if ext == ".xlsx" \
+            and entry.is_file \
+            and entry.stat().st_mtime > week_ago:
+        excel_data_df = \
+            pandas.read_excel(
+                f"{directory}/{entry.name}",
+                sheet_name='E-Check',
+                engine='openpyxl',
+                header=0,
+                converters={
+                    'Id': str,
+                    'CX Name': str,
+                    'Customer Account': str,
+                    'Amount': str,
+                    'Routing #': str,
+                    'Bank Account #': str})\
+            .assign(parent=col[1])\
+            .rename(
+                columns=lambda x: x.strip().
+                replace(" ", "").
+                replace("#", "").lower())
+        # for column in excel_data_df.select_dtypes(include=[object]).columns:  # noqa: E501
+        #    # Remove leading and trailing spaces
+        #    excel_data_df[column] = excel_data_df[column].str.strip()
+        #    excel_data_df[column] = excel_data_df[column].str.replace(
+        #        r'\s+', ' ', regex=True)  # Convert multiple spaces to one # noqa: E501
+        #    # Convert to lower case
+        #    excel_data_df[column] = excel_data_df[column].str.lower()
 
-            if entry.is_file and entry.stat().st_mtime > week_ago:
-                try:
-                    doc = TrxHeadEcheck()
-                    doc.id = col[1]
-                    doc.type = "FILE"
-                    doc.method = method
-                    doc.merchant = merch
-                    doc.src = "fileup"
-                    doc.name = str(entry.name)
-                    doc.ext = ext
-                    doc.path = directory
-                    doc.size = entry.stat().st_size
-                    doc.createds = entry.stat().st_ctime
-                    doc.modifieds = entry.stat().st_mtime
-                    doc.created = \
-                        int(datetime.fromtimestamp(doc.createds).
-                            strftime('%Y%m%d%H%M%S'))
-                    doc.modified = \
-                        int(datetime.fromtimestamp(doc.modifieds).
-                            strftime('%Y%m%d%H%M%S'))
-                    doc.content = ""
-                    doc.fullpath = f"{directory}/{entry.name}"
-                    doc.duplicate = False
-                    doc.count = count
-                    doc.sum = suma
-                    if col[1] not in db:
-                        # pylint: disable=unused-variable
-                        doc_id, doc_rev = db.save(doc.to_dict())
-                        inserted_document_ids.append(doc_id)
-                        file_list.append(doc)
-                        item: TrxRowEcheck
-                        for item in l1:
-                            doc_id, doc_rev = db.save(item.to_dict())
-                            inserted_document_ids.append(doc_id)
-                except Exception as e:  # pylint: disable=broad-except
-                    detail = f'There was an error inserting the header: {e}'
-                    return detail
+        ##################
 
-                # transactions += rows
-    message: RabbitMessage = RabbitMessage()
-    message.type = "upload"
-    message.channel = "newfile"
-    message.header = "uploadresult"
-    message.message = filename
-    message.merchant = merch
-    jsonstring = json.dumps(message.to_dict())
-    publish_message('10.5.0.4', 6379, message.channel, jsonstring)
-    return inserted_document_ids
+        # Get a string with all the column
+        # headers separated by pipe "|"
+        column_headers: str = "|".join(excel_data_df.columns)
+        valid_structure = validate_file_struct(
+            entry, method, excel_data_df, column_headers)
+        if not valid_structure:
+            r = await log_and_return_message(
+                db_logtrx,
+                message,
+                docv,
+                "nok",
+                "Error in file structure")
+            return r
+        ##################
+        # if validation_results.status is False:
+        #    validation_results.message = "Failed Validation"
+        #    message.status = 'nok'
+        #    message.message = "validation failed"
+        #    doc["extra"] = validation_results.__dict__
+        # db_logtrx.save(doc)
+        # publishnewfile(filename)
+        # xxxxxxx the following code is ugly, need to fix
+        # if validation_results.status is False:
+        #    break
+
+        tmp = excel_data_df.values.tolist()
+        for t in tmp:
+            try:
+                if t[0].lower() == "total":
+                    line = TrxRowEcheckSignature(
+                            label=t[0],
+                            total=float(t[1]),
+                            count=t[2]
+                    )
+                else:
+                    line = TrxRowEcheck(
+                        customeraccount=t[1],
+                        amount=float(t[2]),
+                        currency="usd",
+                        cxname=t[3],
+                        routing=t[4],
+                        bankaccount=t[5],
+                        accounttype=t[6],
+                        email=t[7],
+                        address=t[8],
+                        trxtype=t[9],
+                        parent=t[10],
+                        merchant=merch,
+                        method=method,
+                        status="pending",
+                        type="row",
+                        origen="file"
+                    )
+                    
+                if isinstance(line, TrxRowEcheckSignature) and (
+                        line.total != suma
+                        or line.count != count):
+                    raise ValueError("Total or count does not match")
+
+                if isinstance(line, TrxRowEcheck):
+                    line.id = f"{merch}_{method}_{t[0]}"
+                    line.fees = get_fees(abs(line.amount), ofees)
+                    #line.parent = col[1]
+                    #line = TrxRowEcheck.model_validate(line)
+                    l1.append(line)
+                    suma += line.amount
+                    count += 1
+
+                    if is_duplicate_transaction(line.id, db):
+                        raise ValueError(f"Duplicate trx in batch (row# {count})")
+
+            except ValidationError as e:
+                error_messages = []
+                for error in e.errors():
+                    # pylint: disable = unused-variable
+                    field = error["loc"][-1]  # noqa: F841
+                    msg = error["msg"]
+                    error_messages.append(f"Error: {msg}({field})")
+                detail = ", ".join(error_messages)
+
+                r = await log_and_return_message(
+                    db_logtrx,
+                    message,
+                    docv,
+                    "nok",
+                    detail)
+                return r
+
+            except Exception as e:  # pylint: disable=broad-except
+                r = await log_and_return_message(
+                    db_logtrx,
+                    message,
+                    docv,
+                    "nok",
+                    f'Error hydrating row: {str(e)}')
+                return r
+
+        try:
+            doc = TrxHeadEcheck()
+            doc.id = col[1]
+            doc.type = "FILE"
+            doc.method = method
+            doc.merchant = merch
+            doc.src = "fileup"
+            doc.name = str(entry.name)
+            doc.ext = ext
+            doc.path = directory
+            doc.size = entry.stat().st_size
+            doc.createds = entry.stat().st_ctime
+            doc.modifieds = entry.stat().st_mtime
+            doc.created = \
+                int(datetime.fromtimestamp(doc.createds).
+                    strftime('%Y%m%d%H%M%S'))
+            doc.modified = \
+                int(datetime.fromtimestamp(doc.modifieds).
+                    strftime('%Y%m%d%H%M%S'))
+            doc.content = ""
+            doc.fullpath = f"{directory}/{entry.name}"
+            doc.duplicate = False
+            doc.count = count
+            doc.sum = suma
+            if col[1] not in db:
+                # pylint: disable=unused-variable
+                doc_id, doc_rev = db.save(doc.to_dict())
+                inserted_document_ids.append(doc_id)
+                file_list.append(doc)
+                item: TrxRowEcheck
+                # Check for duplicates
+                i = 1
+                for item in l1:
+                    if is_duplicate_transaction(item.id, db):
+                        raise ValueError(f"Duplicate trx in row # {i}")
+                    i += 1
+                # Save all documents
+                for item in l1:
+                    trx = item.to_dict(True)
+                    doc_id, doc_rev = db.save(trx)
+                    inserted_document_ids.append(doc_id)
+        except Exception as e:  # pylint: disable=broad-except
+            r = await log_and_return_message(
+                db_logtrx,
+                message,
+                docv,
+                "nok",
+                f'Error inserting the header: {
+                    str(e)}')
+            return r
+
+    r = await log_and_return_message(
+        db_logtrx,
+        message,
+        docv,
+        "ok",
+        f'Success! {len(l1)} trxs added')
+    return r
 
 
 @routerpull.post("/filesupload")
@@ -560,49 +676,6 @@ async def filesupload(files: List[UploadFile]):
                 file:: {file.filename} :: \
                 directory:: {directory} :: \
                 prefix:: {prefix}"}  # noqa: E501
-
-
-async def publishnewfile(filename):
-    '''publishing a message to rabbitmq'''
-
-    ele = filename.split("_")
-    vdate = ele[0]  # pylint: disable=unused-variable # noqa: F841
-    vchecksum = ele[1]  # pylint: disable=unused-variable # noqa: F841
-    merch = ele[2]  # pylint: disable=unused-variable # noqa: F841
-    message: RabbitMessage = RabbitMessage()
-    message.type = "upload"
-    message.channel = "newfile"
-    message.header = "newfile"
-    message.message = filename
-    message.merchant = merch
-
-    jsonstring = json.dumps(message.to_dict())
-
-    publish_message('10.5.0.4', 6379, message.channel, jsonstring)
-
-    # credentials = pika.PlainCredentials('rabbitmq', 'rabbitmq')
-    # connection = pika.BlockingConnection(pika.ConnectionParameters
-    #   ('10.5.0.8', 5672, '/', credentials))  # noqa: E501
-    # channel = connection.channel()
-    # channel.queue_declare(queue='newfile')
-    # jsonstring = json.dumps(message.__dict__)
-    # channel.basic_publish(
-    #    exchange='', routing_key='newfile', body=jsonstring)
-    # connection.close()
-
-
-def publish_message(redis_host, redis_port, channel, message):
-    '''Publishing upload to redis'''
-    redis_client = redis.StrictRedis(
-        host=redis_host, port=redis_port, decode_responses=True)
-    redis_client.publish(channel, message)
-
-
-def publish_message_sock(redis_host, redis_port, channel, message):
-    '''Publishing file parse to redis sockets'''
-    redis_client = redis.StrictRedis(
-        host=redis_host, port=redis_port, decode_responses=True)
-    redis_client.publish(channel, message)
 
 
 @routerpull.post("/transactions")

@@ -1,9 +1,9 @@
 # myconfig.py
 import re
 
-HEADER = "customeraccount|amount|cxname|routing|bankaccount|" + \
+HEADER = "id|customeraccount|amount|cxname|routing|bankaccount|" + \
     "accounttype|email|address|trxtype|parent"
-COLS = 9
+COLS = 10
 SHEETNAME = "E-Check"
 IGNORE_COL = -1
 IGNORE_COL_VAL = "total"

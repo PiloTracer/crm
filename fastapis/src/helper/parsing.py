@@ -55,6 +55,22 @@ def load_config(method):
     return load_module(f"/code/fastapis/config/{config_filename}.py")
 
 
+def validate_file_struct(file_path, method, excel_data_df, headerlive):
+    '''Validate the file structure'''
+    config = load_config(method)
+
+    if headerlive != config.HEADER:
+        return False
+
+    env_columns = [col for col in config.HEADER.split('|') if col]
+
+    if excel_data_df.shape[1] != len(env_columns) or \
+            not validate_excel_structure(file_path, config.SHEETNAME):
+        return False
+
+    return True
+
+
 def validate_parsed(file_path, method, excel_data_df, headerlive):
     '''Validate the parsed excel file'''
     validation_results = ValidationResult()

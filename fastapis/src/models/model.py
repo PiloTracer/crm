@@ -2,247 +2,135 @@
 from datetime import datetime
 import time
 from typing import Optional, List
-from pydantic import BaseModel, Field, validator, ValidationError
+from typing_extensions import Annotated
+from pydantic import BaseModel, Field
+from pydantic.types import constr
 
-from config.netcashach_config import LENGTHS, REGEXES
+from helper.validor import (
+    amount_validator,
+    bankaccount_validator,
+    digits_validator,
+    email_validator,
+    lowercase_validator,
+    name_validator,
+    regular_alphanumeric_validator,
+    trxtype_validator,
+    unsafe_validator
+)
 
 
-class UserApiTrxSchema(BaseModel):
-    """Basic Schema to receive a new Transaction via API"""
-    id: Optional[str] = Field(None, alias='_id')
-    authchecksum: Optional[str] = None
-    authemail: Optional[str] = None
-    customeraccount: str
-    amount: float
-    currency: str
-    fees: float = 0
-    cxname: str
-    routing: str
-    bankaccount: str
-    accounttype: str
-    email: str
-    address: str
-    trxtype: Optional[str] = None
-    parent: Optional[str] = None
-    type: Optional[str] = None
-    merchant: str
-    comment: Optional[str] = None
-    method: str
-    version: str = "0"
-    apikey: Optional[str] = None
-    origen: Optional[str] = None
-    created_by: Optional[str] = None
-    created_merchant: Optional[str] = None
+class BaseNetcashachSchema(BaseModel):
+    '''Basic Fields for Netcashach method'''
+    # pylint: disable = line-too-long
+    customeraccount: Annotated[constr(strip_whitespace=True, min_length=3, max_length=20), str] = Field(..., description="Receiver's user account")  # type: ignore # noqa: E501
+    amount: float = Field(..., description="Transaction amount", ge=20.0, le=1000000000.0)  # type: ignore # noqa: E501
+    # pylint: disable = line-too-long
+    currency: Annotated[constr(strip_whitespace=True, min_length=3, max_length=3), str] = Field(..., description="Transaction currency")  # type: ignore # noqa: E501
+    # pylint: disable = line-too-long
+    cxname: Annotated[constr(strip_whitespace=True, min_length=5, max_length=100), str] = Field(..., description="Receiver's name")  # type: ignore # noqa: E501
+    # pylint: disable = line-too-long
+    routing: Annotated[constr(strip_whitespace=True, min_length=5, max_length=20), str] = Field(..., description="Receiver's routing number")  # type: ignore # noqa: E501
+    # pylint: disable = line-too-long
+    bankaccount: Annotated[constr(strip_whitespace=True, min_length=5, max_length=100), str] = Field(..., description="Receiver's bank account")  # type: ignore # noqa: E501
+    # pylint: disable = line-too-long
+    accounttype: Annotated[constr(strip_whitespace=True, min_length=1, max_length=1), str] = Field(..., description="Receiver's account type")  # type: ignore # noqa: E501
+    # pylint: disable = line-too-long
+    email: Annotated[constr(strip_whitespace=True, min_length=10, max_length=200), str] = Field(..., description="Receiver's email")  # type: ignore # noqa: E501
+    # pylint: disable = line-too-long
+    address: Annotated[constr(strip_whitespace=True, min_length=10, max_length=200), str] = Field(..., description="Receiver's address")  # type: ignore # noqa: E501
+    # pylint: disable = line-too-long
+    trxtype: Annotated[constr(strip_whitespace=True, min_length=3, max_length=20), str] = Field(..., description="Type of transaction")  # type: ignore # noqa: E501
+    descriptor: Optional[str] = None
+    reference: Optional[str] = None
+    reason: Optional[str] = None
 
-    @validator('authemail', pre=True)
-    # pylint: disable = no-self-argument
-    def lowercase_authemail(cls, value):
-        '''Convert authemail to lowercase'''
-        if value is not None:
-            value = value.lower()
-        return value
+    _address_val_unsafe = unsafe_validator('address')
+    _address_val_lowercase = lowercase_validator('address')
+    _trxtype_val_trxtype = trxtype_validator('trxtype')
+    _trxtype_val_lowercase = lowercase_validator('trxtype')
+    _email_val_email = email_validator('email')
+    _email_val_lowercase = lowercase_validator('email')
+    _accounttype_val_lowercase = lowercase_validator('accounttype')
+    _bankaccount_val_bankaccount = bankaccount_validator('bankaccount')
+    _bankaccount_val_lowercase = lowercase_validator('bankaccount')
+    _routing_val_digits = digits_validator('routing')
+    _cxname_val_name = name_validator('cxname')
+    _cxname_val_lowercase = lowercase_validator('cxname')
+    _amount_val_amount = amount_validator('amount')
+    _customeraccount_val_custaccount = regular_alphanumeric_validator('customeraccount')  # noqa: E501
+    _customeraccount_val_lowercase = lowercase_validator('customeraccount')
 
-    @validator('authemail')
-    # pylint: disable = no-self-argument
-    def validate_authemail(cls, value):
-        '''Validate Authenticate Email'''
-        if value is not None:
-            if not REGEXES["email"].match(value):
-                raise ValidationError('Invalid authemail')
-            if len(value) > LENGTHS["email"]:
-                raise ValidationError(
-                    f'authemail must be less than {
-                        LENGTHS["email"]} characters')
-        return value
-
-    @validator('customeraccount', pre=True)
-    # pylint: disable = no-self-argument
-    def lowercase_customeraccount(cls, value):
-        '''Convert customeraccount to lowercase'''
-        if value is not None:
-            value = value.lower()
-        return value
-
-    @validator('customeraccount')
-    # pylint: disable = no-self-argument
-    def validate_customeraccount(cls, value):
-        '''Validate Customer Account'''
-        if value is not None:
-            if not REGEXES["customeraccount"].match(value):
-                raise ValidationError('Invalid customeraccount')
-            if len(value) > LENGTHS["customeraccount"]:
-                raise ValidationError(
-                    f'customeraccount must be less than {
-                        LENGTHS["customeraccount"]} characters')
-        return value
-
-    @validator('amount')
-    # pylint: disable = no-self-argument
-    def validate_amount(cls, value):
-        '''Validate Amount'''
-        if value is not None:
-            if not REGEXES["amount"].match(str(value)):
-                raise ValidationError('Invalid amount')
-            if len(str(value)) > LENGTHS["cxname"]:
-                raise ValidationError(
-                    f'amount must be less than {
-                        LENGTHS["amount"]} characters')
-        return value
-
-    @validator('cxname', pre=True)
-    # pylint: disable = no-self-argument
-    def lowercase_cxname(cls, value):
-        '''Convert cxname to lowercase'''
-        if value is not None:
-            value = value.lower()
-        return value
-
-    @validator('cxname')
-    # pylint: disable = no-self-argument
-    def validate_cxname(cls, value):
-        '''Validate Customer Name'''
-        if value is not None:
-            if not REGEXES["cxname"].match(value):
-                raise ValidationError('Invalid cxname')
-            if len(value) > LENGTHS["cxname"]:
-                raise ValidationError(
-                    f'cxname must be less than {
-                        LENGTHS["cxname"]} characters')
-        return value
-
-    @validator('routing', pre=True)
-    # pylint: disable = no-self-argument
-    def lowercase_routing(cls, value):
-        '''Convert routing to lowercase'''
-        if value is not None:
-            value = value.lower()
-        return value
-
-    @validator('routing')
-    # pylint: disable = no-self-argument
-    def validate_routing(cls, value):
-        '''Validate routing'''
-        if value is not None:
-            if not REGEXES["routing"].match(value):
-                raise ValidationError('Invalid routing')
-            if len(value) > LENGTHS["routing"]:
-                raise ValidationError(
-                    f'routing must be less than {
-                        LENGTHS["routing"]} characters')
-        return value
-
-    @validator('bankaccount', pre=True)
-    # pylint: disable = no-self-argument
-    def lowercase_bankaccount(cls, value):
-        '''Convert bankaccount to lowercase'''
-        if value is not None:
-            value = value.lower()
-        return value
-
-    @validator('bankaccount')
-    # pylint: disable = no-self-argument
-    def validate_bankaccount(cls, value):
-        '''Validate bankaccount number'''
-        if value is not None:
-            if not REGEXES["bankaccount"].match(value):
-                raise ValidationError('Invalid bankaccount')
-            if len(value) > LENGTHS["bankaccount"]:
-                raise ValidationError(
-                    f'bankaccount must be less than {
-                        LENGTHS["bankaccount"]} characters')
-        return value
-
-    @validator('accounttype', pre=True)
-    # pylint: disable = no-self-argument
-    def lowercase_accounttype(cls, value):
-        '''Convert accounttype to lowercase'''
-        if value is not None:
-            value = value.lower()
-        return value
-
-    @validator('accounttype')
-    # pylint: disable = no-self-argument
-    def validate_accounttype(cls, value):
-        '''Validate accounttype'''
-        if value is not None:
-            if not REGEXES["accounttype"].match(value):
-                raise ValidationError('Invalid accounttype')
-            if len(value) > LENGTHS["accounttype"]:
-                raise ValidationError(
-                    f'accounttype must be less than {
-                        LENGTHS["accounttype"]} characters')
-        return value
-
-    @validator('email', pre=True)
-    # pylint: disable = no-self-argument
-    def lowercase_email(cls, value):
-        '''Convert email to lowercase'''
-        if value is not None:
-            value = value.lower()
-        return value
-
-    @validator('email')
-    # pylint: disable = no-self-argument
-    def validate_email(cls, value):
-        '''Validate email'''
-        if value is not None:
-            if not REGEXES["email"].match(value):
-                raise ValidationError('Invalid email')
-            if len(value) > LENGTHS["email"]:
-                raise ValidationError(
-                    f'email must be less than {
-                        LENGTHS["email"]} characters')
-        return value
-
-    @validator('address', pre=True)
-    # pylint: disable = no-self-argument
-    def lowercase_address(cls, value):
-        '''Convert address to lowercase'''
-        if value is not None:
-            value = value.lower()
-        return value
-
-    @validator('address')
-    # pylint: disable = no-self-argument
-    def validate_address(cls, value):
-        '''Validate address'''
-        if value is not None:
-            if not REGEXES["address"].match(value):
-                raise ValidationError('Invalid address')
-            if len(value) > LENGTHS["address"]:
-                raise ValidationError(
-                    f'address must be less than {
-                        LENGTHS["address"]} characters')
-        return value
-
-    @validator('trxtype', pre=True)
-    # pylint: disable = no-self-argument
-    def lowercase_trxtype(cls, value):
-        '''Convert trxtype to lowercase'''
-        if value is not None:
-            value = value.lower()
-        return value
-
-    @validator('trxtype')
-    # pylint: disable = no-self-argument
-    def validate_trxtype(cls, value):
-        '''Validate trxtype'''
-        if value is not None:
-            if not REGEXES["trxtype"].match(value):
-                raise ValidationError('Invalid trxtype')
-            if len(value) > LENGTHS["trxtype"]:
-                raise ValidationError(
-                    f'trxtype must be less than {
-                        LENGTHS["trxtype"]} characters')
-        return value
-
-    class Config:  # pylint: disable= missing-class-docstring
+    class Config:
+        '''UserApiTrxSchema config'''
         validate_assignment = True
-        allow_population_by_field_name = True
+        validate_all = False
 
     def to_dict(self):
         """convert to dict"""
         return self.model_dump(by_alias=True, exclude_none=True)
+
+
+class UserApiTrxSchema(BaseNetcashachSchema):
+    "Basic Schema to receive a new Transaction via API"""
+    # pylint: disable = line-too-long
+    id: str = Field(None, alias="_id")  # type: ignore # noqa: E501
+    # pylint: disable = line-too-long
+    fees: float = Field(default=0, description="Transaction fee", ge=0.0, le=1000000000.0)  # type: ignore # noqa: E501
+    # pylint: disable = line-too-long
+    authchecksum: Annotated[constr(strip_whitespace=True, min_length=3, max_length=100), Optional[str]] = Field(default=None, description="Transaction checksum")  # type: ignore # noqa: E501
+    # pylint: disable = line-too-long
+    authemail: Annotated[constr(strip_whitespace=True, min_length=3, max_length=100), Optional[str]] = Field(default=None, description="Credentials email")  # type: ignore # noqa: E501
+    parent: Optional[str] = None
+    type: Optional[str] = None
+    merchant: Annotated[constr(strip_whitespace=True, min_length=3, max_length=50), str] = Field(..., description="Merchant")  # type: ignore # noqa: E501
+    comment: Annotated[constr(strip_whitespace=True, min_length=0, max_length=2000), str] = Field(default="", description="Merchant")  # type: ignore # noqa: E501
+    # pylint: disable = line-too-long
+    method: Annotated[constr(strip_whitespace=True, min_length=3, max_length=50), str] = Field(..., description="Transfer method")  # type: ignore # noqa: E501
+    # pylint: disable = line-too-long
+    version: Annotated[constr(strip_whitespace=True, min_length=3, max_length=20), Optional[str]] = Field(default="1.0", description="API version")  # type: ignore # noqa: E501
+    # pylint: disable = line-too-long
+    apikey: Optional[str] = Field(default=None, strip_whitespace=True, description="Api Key from API credentials")  # type: ignore # noqa: E501
+    origen: Optional[str] = None
+    status: Optional[str] = None
+    created_by: Optional[str] = None
+    created_merchant: Optional[str] = None
+    message: Optional[str] = None
+    # pylint: disable = line-too-long
+    created: int = Field(default_factory=lambda: int(datetime.now().strftime('%Y%m%d%H%M%S')))  # type: ignore # noqa: E501
+    modified: int = created  # type: ignore # noqa: E501
+    createds: float = Field(default_factory=time.time)
+    modifieds: float = createds
+
+    _id_val_alphanum = regular_alphanumeric_validator('id')
+    _authchecksum_val_unsafe = unsafe_validator('authchecksum')
+    _authemail_val_email = email_validator('authemail')
+    _authemail_val_lowercase = lowercase_validator('authemail')
+    _merchant_val_email = regular_alphanumeric_validator('merchant')
+    _merchant_val_lowercase = lowercase_validator('merchant')
+    _method_val_alphanum = regular_alphanumeric_validator('method')
+    _method_val_lowercase = lowercase_validator('method')
+    _version_val_alphanum = regular_alphanumeric_validator('version')
+    _apikey_val_alphanum = regular_alphanumeric_validator('apikey')
+
+    @classmethod
+    def construct_without_validation(cls, **kwargs):
+        return cls.model_construct(**kwargs)
+
+    def to_dict(self, withid: bool = True):
+        """convert to dict"""
+        d = self.model_dump(exclude_none=True, by_alias=True)
+        if not withid and "_id" in d:
+            del d["_id"]
+        if not withid and "id" in d:
+            del d["id"]
+        if withid and self.id is not None:
+            d["_id"] = self.id
+        return d
+
+    class Config:
+        '''UserApiTrxSchema config'''
+        validate_assignment = True
+        validate_all = False
 
 
 class MessageGeneralSchema(BaseModel):
@@ -312,7 +200,8 @@ class TrxUpdateExtraBaseSchema(BaseModel):
     trxtype: Optional[str] = None
     amnt: float = 0
     fees: float = 0
-    description: Optional[str] = None
+    # pylint: disable = line-too-long
+    description: Annotated[constr(strip_whitespace=True, min_length=0, max_length=500), Optional[str]] = Field(default=None, description="Description")  # type: ignore # noqa: E501
     target: Optional[str] = None
     origen: Optional[str] = None
     currency: Optional[str] = None
@@ -321,14 +210,27 @@ class TrxUpdateExtraBaseSchema(BaseModel):
     token: Optional[str] = None
     checksum: Optional[str] = None
 
+    _description_val_unsafe = unsafe_validator('description')
+    _description_val_lowercase = lowercase_validator('description')
+
 
 class TrxUpdateBaseSchema(BaseModel):
     """Base schema for transaction updates"""
     id: Optional[str] = None
     status: str
-    descriptor: Optional[str] = None
-    reference: Optional[str] = None
-    reason: Optional[str] = None
+    # pylint: disable = line-too-long
+    descriptor: Annotated[constr(strip_whitespace=True, min_length=0, max_length=1000), Optional[str]] = Field(default=None, description="Transaction descriptor")  # type: ignore # noqa: E501
+    # pylint: disable = line-too-long
+    reference: Annotated[constr(strip_whitespace=True, min_length=0, max_length=500), Optional[str]] = Field(default=None, description="Transaction reference")  # type: ignore # noqa: E501
+    # pylint: disable = line-too-long
+    reason: Annotated[constr(strip_whitespace=True, min_length=0, max_length=500), Optional[str]] = Field(default=None, description="Transaction reason")  # type: ignore # noqa: E501
+
+    _descriptor_val_unsafe = unsafe_validator('descriptor')
+    _descriptor_val_lowercase = lowercase_validator('descriptor')
+    _reference_val_unsafe = unsafe_validator('reference')
+    _reference_val_lowercase = lowercase_validator('reference')
+    _reason_val_unsafe = unsafe_validator('reason')
+    _reason_val_lowercase = lowercase_validator('reason')
 
 
 class TrxUpdateSchema(TrxUpdateBaseSchema):
@@ -383,9 +285,16 @@ class TrxHeadEcheck(BaseModel):
     created: Optional[int] = 0
     modified: Optional[int] = 0
 
-    def to_dict(self):
+    def to_dict(self, withid: bool = True):
         """convert to dict"""
-        return self.model_dump(exclude_none=True)
+        d = self.model_dump(exclude_none=False)
+        if not withid and "_id" in d:
+            del d["_id"]
+        if not withid and "id" in d:
+            del d["id"]
+        if withid and self.id is not None:
+            d["_id"] = self.id
+        return d
 
 
 class TrxHeadEcheckList:
@@ -393,53 +302,51 @@ class TrxHeadEcheckList:
     list: List[TrxHeadEcheck]
 
 
-class PullTrxEcheck(BaseModel):
-    """Core Transaction Data"""
-    customeraccount: Optional[str] = None
-    amount: Optional[float] = None
-    cxname: Optional[str] = None
-    routing: Optional[str] = None
-    bankaccount: Optional[str] = None
-    accounttype: Optional[str] = None
-    email: Optional[str] = None
-    address: Optional[str] = None
-    trxtype: Optional[str] = None
-    fees: float = 0
-    origen: Optional[str] = None
-    currency: Optional[str] = None
+# class PullTrxEcheck(BaseModel):
+#    """Core Transaction Data"""
+#    customeraccount: Optional[str] = None
+#    amount: Optional[float] = None
+#    cxname: Optional[str] = None
+#    routing: Optional[str] = None
+#    bankaccount: Optional[str] = None
+#    accounttype: Optional[str] = None
+#    email: Optional[str] = None
+#    address: Optional[str] = None
+#    trxtype: Optional[str] = None
 
-    @validator('customeraccount')
-    def validate_customeraccount(cls, value):  # pylint: disable = no-self-argument # noqa: E501
-        '''Validate Customer Account'''
-        if value is not None:
-            if not REGEXES["customeraccount"].match(value):
-                raise ValidationError('Invalid customeraccount')
-            if len(value) > LENGTHS["customeraccount"]:
-                raise ValidationError(
-                    f'customeraccount must be less than {
-                        LENGTHS["customeraccount"]} characters')  # noqa: E501 #pylint: disable= line-too-long
-        return value
+# pylint:disable=pointless-string-statement, syntax-error
+# class TrxRowEcheck(PullTrxEcheck):
+#    fees: float = 0
+#    origen: Optional[str] = None
+#    currency: Optional[str] = None
+#    parent: Optional[str] = None
+#    tXyXpXe: sXtXr = "row"
+#    method: Optional[str] = None
+#    created: int = 0
+#    modified: int = 0
+#    createds: float = 0
+#    modifieds: float = 0
+#    merchant: Optional[str] = None
+#    status: str = "pending"
+#    descriptor: Optional[str] = None
+#    reference: Optional[str] = None
+#    reason: Optional[str] = None
+#    comment: Optional[str] = None
+#
+#    def to_dict(self):
+#        return self.model_dump(exclude_none=True)
 
 
-class TrxRowEcheck(PullTrxEcheck):
-    """Transaction row for echeck"""
-    parent: Optional[str] = None
-    type: str = "row"
-    method: Optional[str] = None
-    created: int = 0
-    modified: int = 0
-    createds: float = 0
-    modifieds: float = 0
-    merchant: Optional[str] = None
-    status: str = "pending"
-    descriptor: Optional[str] = None
-    reference: Optional[str] = None
-    reason: Optional[str] = None
-    comment: Optional[str] = None
+class TrxRowEcheck(UserApiTrxSchema):
+    '''Generic Transaction Echeck'''
+    class Config:
+        '''UserApiTrxSchema config'''
+        validate_assignment = True
+        validate_all = False
 
-    def to_dict(self):
-        """convert to dict"""
-        return self.model_dump(exclude_none=True)
+
+class TrxRowEcheckId(UserApiTrxSchema):
+    '''Generic Transaction Echeck'''
 
 
 class TrxRowEcheckSignature(BaseModel):
@@ -447,18 +354,6 @@ class TrxRowEcheckSignature(BaseModel):
     label: Optional[str] = None
     total: Optional[float] = 0.0
     count: Optional[int] = 0
-
-
-class TrxRowEcheckId(TrxRowEcheck):
-    """Transaction row for echeck with id"""
-    id: Optional[str] = None
-
-    def to_dict(self, withid: bool = True):
-        """convert to dict"""
-        d = self.model_dump(exclude_none=True)
-        if withid and self.id is not None:
-            d["_id"] = self.id
-        return d
 
 
 class TrxRowEcheckList:

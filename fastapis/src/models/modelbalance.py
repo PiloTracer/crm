@@ -33,7 +33,7 @@ class BalanceTrxMerchantModel(BaseModel):
 
 class BalanceModel(BaseModel):
     """docstring"""
-    id: str | None = ""  # unique transaction dentifier.
+    id: str = Field(None, alias="_id")  # type: ignore # noqa: E501
     created: BalanceCreatedModel = BalanceCreatedModel()
     status: BalanceTrxStatusModel = BalanceTrxStatusModel()
     merchant: BalanceTrxMerchantModel = BalanceTrxMerchantModel()
@@ -76,3 +76,14 @@ class BalanceModel(BaseModel):
             'message': self.message,
             'origen': self.origen
         }
+
+    def to_dict(self, withid: bool = True):
+        """convert to dict"""
+        d = self.model_dump(exclude_none=True, by_alias=True)
+        if not withid and "_id" in d:
+            del d["_id"]
+        if not withid and "id" in d:
+            del d["id"]
+        if withid and self.id is not None:
+            d["_id"] = self.id
+        return d
