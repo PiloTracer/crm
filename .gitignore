@@ -16,7 +16,9 @@ rabbitmq/
 rabbitmq.conf/
 redis_data/
 docker-conf/
+bloom_data/*
 *.zip
+bloom_filter.db
 
 # User-specific files
 *.rsuser

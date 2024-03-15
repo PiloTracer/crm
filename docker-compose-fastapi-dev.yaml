@@ -20,6 +20,7 @@ services:
       - ./fastapis/src:/code/fastapis
       - ./uploads/fast/files:/crmdir/uploads/fast/files
       - ./uploads/fast/log:/crmdir/uploads/fast/log
+      - ./bloom_data:/crmdir/bloom/data
     #depends_on:
     #  - couchserver
     networks:

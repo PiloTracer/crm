@@ -40,6 +40,7 @@ COPY ./.env .
 
 RUN mkdir -p /crmdir/uploads/fast/files && chmod 777 /crmdir/uploads/fast/files
 RUN mkdir -p /crmdir/uploads/fast/log && chmod 777 /crmdir/uploads/fast/log
+RUN mkdir -p /crmdir/bloom/data && chmod 777 /crmdir/bloom/data
 
 # Expose the port the app runs on
 EXPOSE 8000
