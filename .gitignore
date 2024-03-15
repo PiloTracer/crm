@@ -17,6 +17,7 @@ rabbitmq.conf/
 redis_data/
 docker-conf/
 bloom_data/*
+env/fastapis/env/
 *.zip
 bloom_filter.db
 
