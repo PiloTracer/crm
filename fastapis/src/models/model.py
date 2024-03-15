@@ -63,7 +63,7 @@ class BaseNetcashachSchema(BaseModel):
     class Config:
         '''UserApiTrxSchema config'''
         validate_assignment = True
-        validate_all = False
+        validate_default = False
 
     def to_dict(self):
         """convert to dict"""
@@ -130,7 +130,7 @@ class UserApiTrxSchema(BaseNetcashachSchema):
     class Config:
         '''UserApiTrxSchema config'''
         validate_assignment = True
-        validate_all = False
+        validate_default = False
 
 
 class MessageGeneralSchema(BaseModel):
@@ -246,7 +246,7 @@ class TrxUpdateSchema(TrxUpdateBaseSchema):
     transaction: Optional[TrxUpdateExtraBaseSchema] = None
 
     class Config:  # pylint: disable= missing-class-docstring
-        orm_mode = True
+        from_attributes = True
 
     def to_dict(self):
         """Convert TrxUpdateSchema to dict"""
@@ -342,7 +342,7 @@ class TrxRowEcheck(UserApiTrxSchema):
     class Config:
         '''UserApiTrxSchema config'''
         validate_assignment = True
-        validate_all = False
+        validate_default = False
 
 
 class TrxRowEcheckId(UserApiTrxSchema):
