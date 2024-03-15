@@ -89,7 +89,7 @@ export async function POST(
         j.transaction = lowercaseObject(j.transaction);
 
         const data = {
-            _id: apiauth.merchant + "_" + j.transaction.id,
+            _id: apiauth.merchant + "_" + method + "_" + j.transaction.id,
             authchecksum: j.authentication.checksum,
             authemail: j.authentication.email,
             customeraccount: j.transaction.customeraccount,
