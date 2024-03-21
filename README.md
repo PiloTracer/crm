@@ -1,2 +1,0 @@
-# crm
-Initial crm project
