@@ -1,1 +1,1 @@
-A full docker container system, featuring a transaction/adjustment tracking tool.
+Basic Transaction tracking system, supporting file uploads, status tracking, accounting adjustments, user management, and balance calculation.  This is an alpha version, and will be part of a bigger integral system with CRM and online shop modules.
