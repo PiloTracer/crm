@@ -4,15 +4,16 @@
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
 # Readme files:
-readme*.*
 readme installs.txt
 readme-git.txt
 readme2.txt
 README-original.md
 README.llama.txt
-README.md
 README_couchdb.txt
 README_fastapi.txt
+readme.websockets.txt
+readme_*.*
+README_*.*
 Transactional Data Service API Documentation.docx
 websocketkey.key
 test/
