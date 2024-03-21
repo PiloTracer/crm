@@ -1,0 +1,31 @@
+version: '3.8'
+services:
+  backend:
+    image: fastap_i
+    container_name: fastap_c
+    build:
+      context: ./fastapis/src
+      dockerfile: ../../Dockerfile.fastapis.PRD
+    hostname: srv.fastapis
+    ports:
+      - 8000:8000
+      - 8888:8888
+      - 5678:5678
+    environment:
+      - TZ=America/Los_Angeles
+    volumes:
+      - ./uploads/fast/files:/crmdir/uploads/fast/files
+      - ./uploads/fast/log:/crmdir/uploads/fast/log
+      - ./bloom_data:/crmdir/bloom/data
+    networks:
+      web:
+        ipv4_address: 10.5.0.6
+
+networks:
+  web:
+    name: simple_web
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 10.5.0.0/16
+         gateway: 10.5.0.1

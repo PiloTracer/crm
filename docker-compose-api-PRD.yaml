@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  apifront:
+    image: api_i
+    container_name: api_c
+    build:
+      context: ./api
+      dockerfile: ../Dockerfile.api.PRD
+    ports:
+      - "6300:3000"
+      #- "6000:3000"
+      - "6007:3007"
+      - "6001:3001"
+      - "10229:9229"
+      - "10222:9222"
+      - "7006:6006" #storybook
+    environment:
+      - NODE_ENV=production
+      - TZ=America/Los_Angeles
+    networks:
+      web:
+        ipv4_address: 10.5.0.12
+
+networks:
+  web:
+    name: simple_web
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 10.5.0.0/16
+         gateway: 10.5.0.1

@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  couchserver:
+    build:
+      context: ./couchdb
+      dockerfile: ../Dockerfile.couchdb
+    restart: unless-stopped
+    container_name: syscouchdb
+    hostname: srv.syscouchdb
+    ports:
+      - "6984:5984"
+    environment:
+      - COUCHDB_USER=dashboard
+      - COUCHDB_PASSWORD=Jimena1000
+      #- COUCHDB_URL=http://localhost:6984
+      #- COUCHDB_DB=sinpe
+      - TZ=America/Los_Angeles
+    volumes:
+      - ./couchdb/dbdata:/opt/couchdb/data
+      - ./couchdb/config:/opt/couchdb/etc/local.d
+    networks:
+      web:
+        ipv4_address: 10.5.0.5
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5984"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+networks:
+  web:
+    name: simple_web
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 10.5.0.0/16
+         gateway: 10.5.0.1
+
+

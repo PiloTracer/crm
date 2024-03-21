@@ -1,0 +1,28 @@
+FROM node:21.7.1-alpine3.18 as builder
+
+WORKDIR /code/dashboard
+
+COPY package*.json ./
+RUN npm install
+COPY . .
+COPY next.config.PRD.js next.config.js
+RUN npm run build
+
+FROM node:21.7.1-alpine3.18 as runner
+
+WORKDIR /code/dashboard
+
+COPY --from=builder /code/dashboard/package.json .
+COPY --from=builder /code/dashboard/package-lock.json .
+COPY --from=builder /code/dashboard/next.config.js ./
+COPY --from=builder /code/dashboard/public ./public
+COPY --from=builder /code/dashboard/.next/standalone ./
+COPY --from=builder /code/dashboard/.next/static ./.next/static
+
+ENV TZ=America/Los_Angeles
+EXPOSE 3000
+
+#CMD ["node", "server.js"]
+
+#RUN sleep 60;cqlsh -f build_all.cql
+ENTRYPOINT ["node", "server.js"]

@@ -1,0 +1,9 @@
+{
+	"python.analysis.extraPaths": [
+		"./fastapis/src/routers"
+	],
+	"workbench.colorTheme": "Solarized Light",
+	"inference.endpoint": "http://localhost:11434",
+	"inference.model": "codellama:70b-code-fp16",
+	"inference.custom.model": "codellama"
+}

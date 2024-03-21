@@ -1,0 +1,54 @@
+# Stage 1: Build the base image with Python installed
+# Use an official Python runtime as a parent image
+FROM python:3.12.2-alpine3.19 as base
+
+# Install any needed packages specified in requirements.txt
+RUN apk update && \
+    apk add --no-cache gcc musl-dev tzdata && \
+    pip install --upgrade pip && \
+    rm -rf /var/cache/apk/*
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+# Set the working directory in the container
+WORKDIR /code/pytap
+
+# Stage 2: Install Python dependencies
+FROM base AS builder
+
+# Copy the current directory contents into the container at /code/pytap
+COPY requirements.txt ./
+
+# Install any needed packages specified in requirements.txt
+# Use pip wheel to build dependencies
+RUN pip install --upgrade pip \
+    && pip wheel --trusted-host pypi.python.org --no-cache-dir --no-deps --wheel-dir /wheels -r requirements.txt
+
+# Stage 3: Copy the application code and install dependencies
+FROM base AS runtime
+
+ENV TZ=America/Los_Angeles
+
+# Copy pre-built wheels from builder stage
+COPY --from=builder /wheels /wheels
+COPY --from=builder /code/pytap/requirements.txt .
+
+RUN mkdir -p /crmdir/uploads/pytap/log && chmod 777 /crmdir/uploads/pytap/log
+
+# Install the dependencies
+RUN pip install --no-cache /wheels/*
+
+# Copy the rest of your app's source code from your host to your image filesystem.
+COPY . .
+#COPY ./.env .
+
+# Make your program executable
+#RUN chmod +x listener.py
+
+# Inform Docker that the container is listening on the specified port at runtime.
+EXPOSE 80
+
+# Run receiver.py when the container launches
+ENTRYPOINT ["python3", "pytap.py"]

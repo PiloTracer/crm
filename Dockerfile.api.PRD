@@ -1,0 +1,30 @@
+FROM node:21.7.1-alpine3.18 as builder
+
+#RUN npm install -g npm@10.4.0
+
+WORKDIR /code/api/run
+
+COPY ./run/package*.json ./
+RUN npm install
+COPY ./run .
+COPY ./run/next.config.PRD.mjs ./next.config.mjs
+RUN npm run build
+
+FROM node:21.7.1-alpine3.18 as runner
+
+WORKDIR /code/api/run
+
+COPY --from=builder /code/api/run/package.json .
+COPY --from=builder /code/api/run/package-lock.json .
+COPY --from=builder /code/api/run/next.config.mjs ./
+COPY --from=builder /code/api/run/public ./public
+COPY --from=builder /code/api/run/.next/standalone ./
+COPY --from=builder /code/api/run/.next/static ./.next/static
+
+ENV TZ=America/Los_Angeles
+EXPOSE 3000
+
+#CMD ["node", "server.js"]
+
+#RUN sleep 60;cqlsh -f build_all.cql
+ENTRYPOINT ["node", "server.js"]
