@@ -8,7 +8,7 @@ services:
       - "6379:6379"
     hostname: srv.redis
     volumes:
-      - ./redis_data:/code/redis/data
+      - ./redis_data:/data
     networks:
       web:
         ipv4_address: 10.5.0.4
@@ -19,6 +19,7 @@ services:
       retries: 3
       start_period: 10s
     restart: always
+    command: redis-server --save 900 1 --save 300 10 --save 60 10000 --rdbcompression yes --dbfilename dump.rdb --appendonly yes --appendfilename "appendonly.aof" --appendfsync everysec
 
 networks:
   web:

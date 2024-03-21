@@ -8,7 +8,7 @@ REGEXES = {
                         re.IGNORECASE),
     "regularalphanumeric": re.compile(r'^[a-z0-9-_.]*$', re.IGNORECASE),
     "amount": re.compile(r'^\d+(\.\d+)?$', re.IGNORECASE),
-    "name": re.compile(r'^[a-z0-9\'\., -]+(?: [a-z0-9\'\., -]+)*$', re.IGNORECASE),  # noqa: E501
+    "name": re.compile(r'^[a-z0-9À-ÿ\'\., -]+(?: [a-z0-9À-ÿ\'\., -]+)*$', re.IGNORECASE),  # noqa: E501
     "digits": re.compile(r'^\d*$'),
     "bankaccount": re.compile(r'^[a-z 0-9-]*$', re.IGNORECASE),
     "letters": re.compile(r'^[a-z]*$'),
@@ -32,11 +32,11 @@ UNSAFE_PATTERNS = {
     # pylint: disable=line-too-long
     "xss": re.compile(r'''(<script[^>]*>([^<]*)</script>|javascript:[^ ]+)''', re.IGNORECASE),  # noqa: E501
     # pylint: disable=line-too-long
-    "command": re.compile(r'(\bbash\b|\bsh\b|\bcmd\b|\bpowershell\b|\bperl\b|\bphp\b|\.\./|[|&;]|[`"])', re.IGNORECASE),  # noqa: E501
     # SQL injection patterns
+    "command": re.compile(r'(\bbash\b|\bsh\b|\bcmd\b|\bpowershell\b|\bperl\b|\bphp\b|\.\./|[|&;]|(?<![a-zA-Z0-9])`(?![a-zA-Z0-9])|(?<![a-zA-Z0-9])"(?![a-zA-Z0-9]))', re.IGNORECASE),
     "sql": re.compile(r"(?:\b(SELECT|INSERT|UPDATE|DELETE|EXECUTE|EXEC|DROP|ALTER|CREATE|SHOW TABLES|SHOW DATABASES)\b)", re.IGNORECASE),  # noqa: E501
     # File inclusion and path traversal patterns
-    "file_inclusion": re.compile(r'(\.{2,}|[a-zA-Z]:\\|\/|(?:%2e){2}|(?:%2f))', re.IGNORECASE),  # noqa: E501
+    "file_inclusion": re.compile(r'(\.{2,}|[a-zA-Z]:\\|(?:%2e){2}|(?:%2f))', re.IGNORECASE),  # noqa: E501
     # XML and XPATH injection patterns
     "xml_injection": re.compile(r'<!\[CDATA|<\?xml|xmlns\=|<!DOCTYPE|\]\]>', re.IGNORECASE),  # noqa: E501
     # HTTP response splitting patterns
@@ -67,10 +67,12 @@ def unsafe_validator(  # pylint: disable = dangerous-default-value
         field: str, patterns: Dict[str, re.Pattern] = UNSAFE_PATTERNS):
     '''Validates the field value against unsafe patterns'''
     def validate(value):
+        i = 0
         for pattern_name, pattern in patterns.items():
             if pattern.search(str(value)):
                 raise ValueError(f'Unsafe {
-                    pattern_name} pattern found in {field}')
+                    pattern_name} pattern found in {field} ({i})')
+            i += 1
         return value
     return validator(field, allow_reuse=True)(validate)
 

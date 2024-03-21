@@ -1,4 +1,4 @@
-FROM node:21-alpine3.18 as builder
+FROM node:21.7.1-alpine3.18 as builder
 
 WORKDIR /code/dashboard
 
@@ -8,7 +8,7 @@ COPY . .
 COPY next.config.PRD.js next.config.js
 RUN npm run build
 
-FROM node:21-alpine3.18 as runner
+FROM node:21.7.1-alpine3.18 as runner
 
 WORKDIR /code/dashboard
 

@@ -40,9 +40,6 @@ class BaseNetcashachSchema(BaseModel):
     address: Annotated[constr(strip_whitespace=True, min_length=10, max_length=200), str] = Field(..., description="Receiver's address")  # type: ignore # noqa: E501
     # pylint: disable = line-too-long
     trxtype: Annotated[constr(strip_whitespace=True, min_length=3, max_length=20), str] = Field(..., description="Type of transaction")  # type: ignore # noqa: E501
-    descriptor: Optional[str] = None
-    reference: Optional[str] = None
-    reason: Optional[str] = None
 
     _address_val_unsafe = unsafe_validator('address')
     _address_val_lowercase = lowercase_validator('address')
@@ -75,21 +72,24 @@ class UserApiTrxSchema(BaseNetcashachSchema):
     # pylint: disable = line-too-long
     id: str = Field(None, alias="_id")  # type: ignore # noqa: E501
     # pylint: disable = line-too-long
-    fees: float = Field(default=0, description="Transaction fee", ge=0.0, le=1000000000.0)  # type: ignore # noqa: E501
+    fees: Optional[float] = 0
     # pylint: disable = line-too-long
-    authchecksum: Annotated[constr(strip_whitespace=True, min_length=3, max_length=100), Optional[str]] = Field(default=None, description="Transaction checksum")  # type: ignore # noqa: E501
+    authchecksum: Optional[str] = None
     # pylint: disable = line-too-long
-    authemail: Annotated[constr(strip_whitespace=True, min_length=3, max_length=100), Optional[str]] = Field(default=None, description="Credentials email")  # type: ignore # noqa: E501
+    authemail: Optional[str] = None
     parent: Optional[str] = None
     type: Optional[str] = None
     merchant: Annotated[constr(strip_whitespace=True, min_length=3, max_length=50), str] = Field(..., description="Merchant")  # type: ignore # noqa: E501
-    comment: Annotated[constr(strip_whitespace=True, min_length=0, max_length=2000), str] = Field(default="", description="Merchant")  # type: ignore # noqa: E501
+    comment: Optional[str] = None
     # pylint: disable = line-too-long
     method: Annotated[constr(strip_whitespace=True, min_length=3, max_length=50), str] = Field(..., description="Transfer method")  # type: ignore # noqa: E501
+    idref: Optional[str] = None
+    descriptor: Optional[str] = None
+    reference: Optional[str] = None
+    reason: Optional[str] = None
+    version: Optional[str] = None
     # pylint: disable = line-too-long
-    version: Annotated[constr(strip_whitespace=True, min_length=3, max_length=20), Optional[str]] = Field(default="1.0", description="API version")  # type: ignore # noqa: E501
-    # pylint: disable = line-too-long
-    apikey: Optional[str] = Field(default=None, strip_whitespace=True, description="Api Key from API credentials")  # type: ignore # noqa: E501
+    apikey: Optional[str] = None
     origen: Optional[str] = None
     status: Optional[str] = None
     created_by: Optional[str] = None
@@ -103,6 +103,7 @@ class UserApiTrxSchema(BaseNetcashachSchema):
 
     _id_val_alphanum = regular_alphanumeric_validator('id')
     _authchecksum_val_unsafe = unsafe_validator('authchecksum')
+    _comment_val_unsafe = unsafe_validator('comment')
     _authemail_val_email = email_validator('authemail')
     _authemail_val_lowercase = lowercase_validator('authemail')
     _merchant_val_email = regular_alphanumeric_validator('merchant')

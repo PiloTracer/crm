@@ -5,6 +5,18 @@
 
 # Readme files:
 readme*.*
+readme installs.txt
+readme-git.txt
+readme2.txt
+README-original.md
+README.llama.txt
+README.md
+README_couchdb.txt
+README_fastapi.txt
+Transactional Data Service API Documentation.docx
+websocketkey.key
+test/
+queries.txt
 bin/PRD/
 bin/dev/
 tmp_*
@@ -18,8 +30,10 @@ redis_data/
 docker-conf/
 bloom_data/*
 env/fastapis/env/
+redis_data/
 *.zip
 bloom_filter.db
+dump.rdb
 
 # User-specific files
 *.rsuser

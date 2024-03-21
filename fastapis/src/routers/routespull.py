@@ -16,7 +16,7 @@ from dependencies.get_db import \
     get_dblog, get_dbmerchant, get_dbusr
 from core.settings import Settings
 from helper.balance import create_balance_trx
-from helper.counter import counter_next
+from helper.counter import counter_next, num_to_alphanumeric
 from helper.fileutils import save_uploaded_file
 from helper.logging import log_and_return_message, publishnewfile
 from helper.merchants import get_fees
@@ -234,7 +234,7 @@ async def transaction_create(
     }
     try:
         request["origen"] = "main"
-        request["_id"] = f"{request["merchant"]}_{request["method"]}_{counter_next("manualtrx")}_u"
+        request["_id"] = str(counter_next("general"))
         result = await transaction_add(request)
     except ValidationError as e:  # pylint: disable= broad-exception-caught
         error_messages = ["Error"]
@@ -268,16 +268,21 @@ async def transaction_add(
         error='default error')
 
     try:
-        # check for duplicates
-        if request["origen"] == "customer" and \
-            is_duplicate_transaction(request["_id"], db):
-            raise ValueError("Error duplicate found")
 
         # validate and mutate the request
         line = TrxRowEcheckId.model_validate(
             request,
             strict=None,
             from_attributes=None)
+
+        line.idref = line.id
+        line.id = f"t{line.created}_{num_to_alphanumeric(line.id)}_{
+            line.merchant}"
+
+        # check for duplicates
+        if request["origen"] == "customer" and \
+                is_duplicate_transaction(line.id, db):
+            raise ValueError("Error duplicate found")
 
         #
         # Default response message
@@ -522,9 +527,9 @@ async def uploads(
             try:
                 if t[0].lower() == "total":
                     line = TrxRowEcheckSignature(
-                            label=t[0],
-                            total=float(t[1]),
-                            count=t[2]
+                        label=t[0],
+                        total=float(t[1]),
+                        count=t[2]
                     )
                 else:
                     line = TrxRowEcheck(
@@ -545,23 +550,26 @@ async def uploads(
                         type="row",
                         origen="file"
                     )
-                    
+
                 if isinstance(line, TrxRowEcheckSignature) and (
                         line.total != suma
                         or line.count != count):
                     raise ValueError("Total or count does not match")
 
                 if isinstance(line, TrxRowEcheck):
-                    line.id = f"{merch}_{method}_{t[0]}"
+                    line.idref = t[0]
+                    line.id = f"t{line.created}_{num_to_alphanumeric(t[0])}_{
+                        line.merchant}"
                     line.fees = get_fees(abs(line.amount), ofees)
-                    #line.parent = col[1]
-                    #line = TrxRowEcheck.model_validate(line)
+                    # line.parent = col[1]
+                    # line = TrxRowEcheck.model_validate(line)
                     l1.append(line)
                     suma += line.amount
                     count += 1
 
                     if is_duplicate_transaction(line.id, db):
-                        raise ValueError(f"Duplicate trx in batch (row# {count})")
+                        raise ValueError(
+                            f"Duplicate trx in batch (row# {count})")
 
             except ValidationError as e:
                 error_messages = []
@@ -569,7 +577,8 @@ async def uploads(
                     # pylint: disable = unused-variable
                     field = error["loc"][-1]  # noqa: F841
                     msg = error["msg"]
-                    error_messages.append(f"Error: {msg}({field})")
+                    error_messages.append(
+                        f"Error: {msg}({field}) @ row # {count}")
                 detail = ", ".join(error_messages)
 
                 r = await log_and_return_message(

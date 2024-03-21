@@ -277,7 +277,7 @@ const ProcessorTransactions: React.FC<UserProps> = ({ mactive }) => {
       },
       {
         accessorKey: "accounttype",
-        header: "T",
+        header: "Acct Type",
         enableEditing: isCreating,
         enableColumnFilter: false,
         editVariant: 'select',
