@@ -1,9 +1,0 @@
-FROM couchdb:3.3.3
-
-RUN apt-get install tzdata -y
-RUN apt-get update
-ENV TZ=America/Los_Angeles
-
-COPY custom.ini /crmdir/couchdb/etc/local.d
-
-RUN service couchdb start
