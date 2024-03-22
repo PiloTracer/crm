@@ -1,0 +1,1 @@
+SECRET_encrypted.txt filter=gpg diff=gpg

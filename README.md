@@ -1,5 +1,6 @@
 Basic Transaction tracking system, supporting file uploads, status tracking, accounting adjustments, user management, and balance calculation.  This is an alpha version, and will be part of a bigger integral system with CRM and online shop modules.
 
+
 ![Login Screen](https://github.com/PiloTracer/crm/blob/main/_screencaptures/001_login.gif?raw=true)
 
 ![Method Merchant Transactions](https://github.com/PiloTracer/crm/blob/main/_screencaptures/002_transactions.gif?raw=true)

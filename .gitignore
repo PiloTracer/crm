@@ -430,3 +430,7 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+[filter "gpg"]
+    clean = gpg --encrypt --recipient 407EC361CD67D742C1B2AF23F64D65F4DCEF0BE5
+    smudge = gpg --decrypt
