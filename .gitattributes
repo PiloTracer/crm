@@ -1,3 +1,2 @@
-SECRET_encrypted.txt filter=gpg diff=gpg
-SECRET_encrypted.txt clean=gpg --recipient 291543E02CF036EB
+SECRET_encrypted.txt filter=gpg
 
